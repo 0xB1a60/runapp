@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Task
+        run: |
+          sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install tools
+        run: ./bin/task install-tools
+
+      - name: Run Lint
+        run: ./bin/task lint
+
+      - name: Run Tests
+        run: ./bin/task test
+
+      - name: Build Go
+        run: ./bin/task build-all
+
+      - name: Release info
+        id: release_info
+        run: |
+          echo "date_name=$(date -u +'%Y-%m-%d %H:%M')" >> $GITHUB_OUTPUT
+          echo "tag_name=$(date -u +'%Y-%m-%d_%H-%M')" >> $GITHUB_OUTPUT
+          echo "commit_msg=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.release_info.outputs.tag_name }}
+          name: ${{ steps.release_info.outputs.date_name }}
+          body: |
+            ${{ steps.release_info.outputs.commit_msg }}
+          files: ./release/*

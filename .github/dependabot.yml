@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: "go modules"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps"
+    versioning-strategy: "increase"
+
+  - package-ecosystem: "github-actions"
+    directory: "/.github/workflows"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "actions"
+    versioning-strategy: "increase"
