@@ -6,7 +6,6 @@ updates:
       interval: "daily"
     commit-message:
       prefix: "deps"
-    versioning-strategy: "increase"
 
   - package-ecosystem: "github-actions"
     directory: "/.github/workflows"
@@ -14,4 +13,3 @@ updates:
       interval: "daily"
     commit-message:
       prefix: "actions"
-    versioning-strategy: "increase"
