@@ -2,11 +2,7 @@ package cli
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
-	"syscall"
 
-	"github.com/liamg/tml"
 	"github.com/spf13/cobra"
 
 	"github.com/0xB1a60/runapp/internal/apps"
@@ -40,7 +36,7 @@ func buildOnBootCmd() *cobra.Command {
 				}
 
 				if app.Mode == common.RunModeOnBoot {
-					if err := runOnBootApp(app); err != nil {
+					if err := runApp(app); err != nil {
 						fmt.Println(fmt.Sprintf("error while running (%s) on boot:", app.Name), err)
 					}
 				}
@@ -50,23 +46,4 @@ func buildOnBootCmd() *cobra.Command {
 		},
 	}
 	return cmd
-}
-
-func runOnBootApp(app apps.App) error {
-	cmd := exec.Command(os.Args[0], "background", "--name", app.Name)
-	cmd.Env = os.Environ()
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = nil
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setsid: true, // start new session
-	}
-
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-
-	fmt.Println(tml.Sprintf("<italic>%s</italic> started with PID: %d", app.Name, cmd.Process.Pid))
-	return nil
 }

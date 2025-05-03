@@ -3,9 +3,8 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
-	"testing"
-
 	"github.com/stretchr/testify/require"
+	"testing"
 
 	"github.com/0xB1a60/runapp/internal/apps"
 	"github.com/0xB1a60/runapp/internal/common"
@@ -162,10 +161,24 @@ func TestFlow(t *testing.T) {
 	require.Equal(t, "my-app", list[0].Name)
 	require.Equal(t, common.AppStatusFailed, list[0].Status)
 
+	// restart it
+	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && /usr/local/bin/runapp restart --name=my-app --skip-logs"`, s.containerName))
+	require.NoError(t, err)
+
+	// get status after restart
+	listRes, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
+	require.NoError(t, err)
+	require.NotEmpty(t, listRes.combined)
+
+	require.NoError(t, json.Unmarshal([]byte(listRes.combined[0]), &list))
+	require.Len(t, list, 1)
+	require.Equal(t, "my-app", list[0].Name)
+	require.Equal(t, common.AppStatusRunning, list[0].Status)
+
+	// simulate onboot
 	_, err = runCommand(fmt.Sprintf("docker restart %s", s.containerName))
 	require.NoError(t, err)
 
-	// simulate onboot
 	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && /usr/local/bin/runapp onboot"`, s.containerName))
 	require.NoError(t, err)
 

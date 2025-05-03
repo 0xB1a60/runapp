@@ -93,7 +93,7 @@ func buildRunCmd() *cobra.Command {
 				runMode = common.RunModeOnBoot
 			}
 
-			return runApp(cmd.Context(), appName, runMode, command, skipLogs)
+			return createAndRunApp(cmd.Context(), appName, runMode, command, skipLogs)
 		},
 	}
 	cmd.PersistentFlags().StringVar(&appName, "name", "", "name of an app")
@@ -213,7 +213,7 @@ func commandValidateFunc(value string) error {
 	return nil
 }
 
-func runApp(ctx context.Context, name string, mode common.RunMode, command string, skipLogs bool) error {
+func createAndRunApp(ctx context.Context, name string, mode common.RunMode, command string, skipLogs bool) error {
 	util.DebugLog("Starting: %s with mode: %s and command: %s", name, string(mode), command)
 
 	cwd, err := os.Getwd()
