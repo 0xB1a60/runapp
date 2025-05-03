@@ -1,9 +1,11 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 	"github.com/0xB1a60/runapp/internal/apps"
 	"github.com/0xB1a60/runapp/internal/common"
 	"github.com/0xB1a60/runapp/internal/tui"
+	"github.com/0xB1a60/runapp/internal/util"
 )
 
 func buildLogsCmd() *cobra.Command {
@@ -67,6 +70,16 @@ func buildLogsCmd() *cobra.Command {
 func streamLogs(ctx context.Context, app apps.App) error {
 	fmt.Println(tml.Sprintf("<yellow>▶ Streaming logs for app: %s. You can stop the streaming with CTRL+C, the process won't be interrupted</yellow>", app.Name))
 
+	if !app.IsRunning() {
+		if err := printLines(os.Stdout, app.StdoutPath, false); err != nil {
+			return err
+		}
+		if err := printLines(os.Stderr, app.StderrPath, true); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	logs, err := apps.ReadLogs(ctx, app)
 	if err != nil {
 		return err
@@ -116,5 +129,35 @@ func streamLogs(ctx context.Context, app apps.App) error {
 	}()
 
 	<-ctx.Done()
+	return nil
+}
+
+func printLines(w io.Writer, filename string, asError bool) error {
+	file, err := os.Open(filename)
+	if err != nil {
+		return fmt.Errorf("failed to open file %s: %w", filename, err)
+	}
+	defer func(file *os.File) {
+		if err := file.Close(); err != nil {
+			util.DebugLog("Failed to close file %s: %s", filename, err)
+		}
+	}(file)
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		if asError {
+			if _, err := fmt.Fprintln(w, tml.Sprintf("<red>%s</red>", scanner.Text())); err != nil {
+				return err
+			}
+			continue
+		}
+		if _, err := fmt.Fprintln(w, scanner.Text()); err != nil {
+			return err
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading file %s: %w", filename, err)
+	}
 	return nil
 }

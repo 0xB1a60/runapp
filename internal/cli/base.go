@@ -71,6 +71,7 @@ func Start() error {
 	rootCmd.MarkFlagsMutuallyExclusive("json", "yaml")
 
 	rootCmd.AddCommand(buildRunCmd())
+	rootCmd.AddCommand(buildRestartCmd())
 	rootCmd.AddCommand(buildLogsCmd())
 	rootCmd.AddCommand(buildStatusCmd())
 
