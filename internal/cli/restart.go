@@ -59,7 +59,7 @@ func buildRestartCmd() *cobra.Command {
 			}
 
 			if app.IsRunning() {
-				return fmt.Errorf("app: %s is already running", appName)
+				return errors.New(tml.Sprintf("app is running and cannot be restarted. Use <magenta>runapp kill --name %s</magenta> to stop it", app.Name))
 			}
 
 			app.Status = common.AppStatusStarting

@@ -18,6 +18,7 @@ All commands support easy to use Terminal User Interface 🧙
 
 * `runapp` - List all apps
 * `runapp run` - Run an app
+* `runapp restart` - Restart an app
 * `runapp status` - Read the status of an app
 * `runapp logs` - Stream the logs (stdout,stderr) of an app
 * `runapp kill` - Kill an app
