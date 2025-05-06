@@ -124,6 +124,6 @@ func buildInstallOnBootCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.PersistentFlags().StringVar(&binaryPath, "binary-path", "", "path to the runapp binary")
+	cmd.Flags().StringVar(&binaryPath, "binary-path", "", "path to the runapp binary")
 	return cmd
 }

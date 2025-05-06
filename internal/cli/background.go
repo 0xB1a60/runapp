@@ -152,7 +152,7 @@ func buildBackgroundCmd() *cobra.Command {
 
 		},
 	}
-	cmd.PersistentFlags().StringVar(&appName, "name", "", "")
+	cmd.Flags().StringVar(&appName, "name", "", "")
 	_ /*ignored as it's not reachable*/ = cmd.MarkPersistentFlagRequired("name")
 	return cmd
 }

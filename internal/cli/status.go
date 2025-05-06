@@ -151,10 +151,10 @@ func buildStatusCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.PersistentFlags().StringVar(&appName, "name", "", "name of an app")
+	cmd.Flags().StringVar(&appName, "name", "", "name of an app")
 
-	cmd.PersistentFlags().BoolVar(&asJson, "json", false, "output as JSON")
-	cmd.PersistentFlags().BoolVar(&asYaml, "yaml", false, "output as YAML")
+	cmd.Flags().BoolVar(&asJson, "json", false, "output as JSON")
+	cmd.Flags().BoolVar(&asYaml, "yaml", false, "output as YAML")
 	cmd.MarkFlagsMutuallyExclusive("json", "yaml")
 
 	return cmd

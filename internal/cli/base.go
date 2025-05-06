@@ -66,8 +66,8 @@ func Start() error {
 			return nil
 		},
 	}
-	rootCmd.PersistentFlags().BoolVar(&asJson, "json", false, "output as JSON")
-	rootCmd.PersistentFlags().BoolVar(&asYaml, "yaml", false, "output as YAML")
+	rootCmd.Flags().BoolVar(&asJson, "json", false, "output as JSON")
+	rootCmd.Flags().BoolVar(&asYaml, "yaml", false, "output as YAML")
 	rootCmd.MarkFlagsMutuallyExclusive("json", "yaml")
 
 	rootCmd.AddCommand(buildRunCmd())

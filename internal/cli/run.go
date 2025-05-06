@@ -96,11 +96,11 @@ func buildRunCmd() *cobra.Command {
 			return createAndRunApp(cmd.Context(), appName, runMode, command, skipLogs)
 		},
 	}
-	cmd.PersistentFlags().StringVar(&appName, "name", "", "name of an app")
-	cmd.PersistentFlags().BoolVar(&runOnBoot, "start-on-boot", false, "automatically start the app on boot")
-	cmd.PersistentFlags().BoolVar(&skipLogs, "skip-logs", false, "skip logs streaming after start")
-	cmd.PersistentFlags().BoolVar(&skipSystemdWarning, "skip-systemd-warning", false, "suppress warning if systemd service is not detected")
-	cmd.PersistentFlags().StringVar(&command, "command", "", "command that will be executed")
+	cmd.Flags().StringVar(&appName, "name", "", "name of an app")
+	cmd.Flags().BoolVar(&runOnBoot, "start-on-boot", false, "automatically start the app on boot")
+	cmd.Flags().BoolVar(&skipLogs, "skip-logs", false, "skip logs streaming after start")
+	cmd.Flags().BoolVar(&skipSystemdWarning, "skip-systemd-warning", false, "suppress warning if systemd service is not detected")
+	cmd.Flags().StringVar(&command, "command", "", "command that will be executed")
 	return cmd
 }
 

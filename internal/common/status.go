@@ -15,10 +15,3 @@ var AppStatusPretty = map[AppStatus]string{
 	AppStatusSuccess:  "Success",
 	AppStatusFailed:   "Failed",
 }
-
-var AppStatusPriority = map[AppStatus]int{
-	AppStatusStarting: 1,
-	AppStatusRunning:  2,
-	AppStatusSuccess:  3,
-	AppStatusFailed:   4,
-}

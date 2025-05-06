@@ -87,8 +87,8 @@ func buildRestartCmd() *cobra.Command {
 			return streamLogs(cmd.Context(), *app)
 		},
 	}
-	cmd.PersistentFlags().StringVar(&appName, "name", "", "name of an app")
-	cmd.PersistentFlags().BoolVar(&skipLogs, "skip-logs", false, "skip logs streaming after restart")
+	cmd.Flags().StringVar(&appName, "name", "", "name of an app")
+	cmd.Flags().BoolVar(&skipLogs, "skip-logs", false, "skip logs streaming after restart")
 	return cmd
 }
 

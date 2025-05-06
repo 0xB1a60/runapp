@@ -8,6 +8,6 @@ const (
 )
 
 var PrettyRunMode = map[RunMode]string{
-	RunModeOnce:   "1️ Once",
+	RunModeOnce:   "Once",
 	RunModeOnBoot: "🔌 On-boot",
 }
