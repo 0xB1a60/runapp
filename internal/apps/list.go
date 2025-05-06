@@ -61,12 +61,19 @@ func List() ([]App, error) {
 	}
 
 	sort.Slice(res, func(i, j int) bool {
-		pi := common.AppStatusPriority[res[i].Status]
-		pj := common.AppStatusPriority[res[j].Status]
-		if pi == pj {
+		pi := res[i].StartedAt
+		pj := res[j].StartedAt
+		if pi == nil {
+			return true
+		}
+		if pj == nil {
+			return false
+		}
+
+		if pi.Equal(*pj) {
 			return res[i].Name < res[j].Name // tie-break by Name
 		}
-		return pi < pj
+		return pi.After(*pj)
 	})
 
 	return res, nil

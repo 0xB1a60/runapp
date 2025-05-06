@@ -15,6 +15,8 @@ import (
 
 func buildRemoveCmd() *cobra.Command {
 	var appName string
+	var removeAllFailed bool
+	var removeAllSuccess bool
 
 	cmd := &cobra.Command{
 		Use:          "remove",
@@ -28,6 +30,23 @@ func buildRemoveCmd() *cobra.Command {
 
 			if !has {
 				fmt.Println(common.NoAppsMessage)
+				return nil
+			}
+
+			if removeAllFailed || removeAllSuccess {
+				list, err := apps.List()
+				if err != nil {
+					return err
+				}
+				for _, app := range list {
+					isFailed := removeAllFailed && app.Status == common.AppStatusFailed
+					isSuccess := removeAllSuccess && app.Status == common.AppStatusSuccess
+					if isFailed || isSuccess {
+						if err := os.RemoveAll(app.ConfigPath); err != nil {
+							return err
+						}
+					}
+				}
 				return nil
 			}
 
@@ -61,6 +80,10 @@ func buildRemoveCmd() *cobra.Command {
 			return os.RemoveAll(app.ConfigPath)
 		},
 	}
-	cmd.PersistentFlags().StringVar(&appName, "name", "", "name of an app")
+	cmd.Flags().StringVar(&appName, "name", "", "name of an app")
+	cmd.Flags().BoolVar(&removeAllFailed, "all-failed", false, "all failed apps")
+	cmd.Flags().BoolVar(&removeAllSuccess, "all-success", false, "all successful apps")
+	cmd.MarkFlagsMutuallyExclusive("all-failed", "name")
+	cmd.MarkFlagsMutuallyExclusive("all-success", "name")
 	return cmd
 }

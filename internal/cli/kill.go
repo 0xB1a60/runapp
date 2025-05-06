@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/spf13/cobra"
 
@@ -34,8 +33,10 @@ func buildKillCmd() *cobra.Command {
 			}
 
 			entry := tui.FlagOrPromptEntry{
-				Value:        appName,
-				TUIFunc:      namePicker(),
+				Value: appName,
+				TUIFunc: func() (*string, error) {
+					return tui.NamePickerWithValidator(namePickerValidator)
+				},
 				ValidateFunc: nameValidateFunc,
 				SetFunc: func(value string) {
 					appName = value
@@ -97,45 +98,24 @@ func buildKillCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.PersistentFlags().StringVar(&appName, "name", "", "name of app")
+	cmd.Flags().StringVar(&appName, "name", "", "name of app")
 	return cmd
 }
 
-func namePicker() func() (*string, error) {
-	return func() (*string, error) {
-		list, err := apps.List()
-		if err != nil {
-			return nil, err
+func namePickerValidator(list []apps.App, appName string) error {
+	var foundApp *apps.App
+	for _, app := range list {
+		if app.Name == appName {
+			foundApp = &app
 		}
-
-		options := make([]huh.Option[string], 0, len(list))
-		idx := make(map[string]apps.App, len(list))
-		for _, app := range list {
-			title := app.Name
-
-			if app.Status == common.AppStatusSuccess || app.Status == common.AppStatusFailed {
-				title = "💀 " + title
-			}
-			idx[app.Name] = app
-			options = append(options, huh.NewOption(title, app.Name))
-		}
-
-		var value string
-		form := huh.NewForm(huh.NewGroup(
-			huh.NewSelect[string]().
-				Title("My app is:").
-				Options(options...).
-				Validate(func(appName string) error {
-					if app := idx[appName]; app.Status == common.AppStatusSuccess || app.Status == common.AppStatusFailed {
-						return fmt.Errorf("app has already: %s", common.AppStatusPretty[app.Status])
-					}
-					return nil
-				}).
-				Value(&value),
-		)).WithTheme(huh.ThemeBase())
-		if err := form.Run(); err != nil {
-			return nil, err
-		}
-		return &value, nil
 	}
+	if foundApp == nil {
+		util.DebugLog("app %s not found", appName)
+		return nil
+	}
+
+	if foundApp.Status == common.AppStatusSuccess || foundApp.Status == common.AppStatusFailed {
+		return errors.New("app is not running")
+	}
+	return nil
 }

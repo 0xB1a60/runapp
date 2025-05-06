@@ -63,7 +63,7 @@ func buildLogsCmd() *cobra.Command {
 			return streamLogs(cmd.Context(), *app)
 		},
 	}
-	cmd.PersistentFlags().StringVar(&appName, "name", "", "name of an app")
+	cmd.Flags().StringVar(&appName, "name", "", "name of an app")
 	return cmd
 }
 

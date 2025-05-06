@@ -127,6 +127,59 @@ func TestLogs(t *testing.T) {
 	require.Contains(t, listRes.stderr, "\x1b[0m\x1b[31mstderr\x1b[39m\x1b[0m")
 }
 
+func TestRemove(t *testing.T) {
+	t.Parallel()
+
+	s := setup(t)
+	defer s.cleanUpFunc()
+
+	_, err := runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run --name sapp --start-on-boot --command 'exit 0;'"`, s.containerName))
+	require.NoError(t, err)
+
+	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run --name fapp --start-on-boot --command 'exit 1;'"`, s.containerName))
+	require.NoError(t, err)
+
+	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run --name rapp --skip-logs --start-on-boot --command 'sleep 1200'"`, s.containerName))
+	require.NoError(t, err)
+
+	listRes, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
+	require.NoError(t, err)
+	require.NotEmpty(t, listRes.combined)
+
+	var list []apps.App
+	require.NoError(t, json.Unmarshal([]byte(listRes.combined[0]), &list))
+	require.Len(t, list, 3)
+
+	require.Contains(t, list[0].Name, "rapp")
+	require.Contains(t, list[1].Name, "fapp")
+	require.Contains(t, list[2].Name, "sapp")
+
+	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp remove --all-failed", s.containerName))
+	require.NoError(t, err)
+
+	listRes, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
+	require.NoError(t, err)
+	require.NotEmpty(t, listRes.combined)
+
+	require.NoError(t, json.Unmarshal([]byte(listRes.combined[0]), &list))
+	require.Len(t, list, 2)
+
+	require.Contains(t, list[0].Name, "rapp")
+	require.Contains(t, list[1].Name, "sapp")
+
+	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp remove --all-success", s.containerName))
+	require.NoError(t, err)
+
+	listRes, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
+	require.NoError(t, err)
+	require.NotEmpty(t, listRes.combined)
+
+	require.NoError(t, json.Unmarshal([]byte(listRes.combined[0]), &list))
+	require.Len(t, list, 1)
+
+	require.Contains(t, list[0].Name, "rapp")
+}
+
 func TestFlow(t *testing.T) {
 	t.Parallel()
 
