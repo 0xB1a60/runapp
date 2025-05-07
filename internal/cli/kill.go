@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/huh/spinner"
+	"github.com/liamg/tml"
 	"github.com/spf13/cobra"
 
 	"github.com/0xB1a60/runapp/internal/apps"
@@ -63,8 +64,6 @@ func buildKillCmd() *cobra.Command {
 			}
 
 			actionFunc := func() {
-				time.Sleep(10 * time.Second)
-
 				done := make(chan error)
 				go func() {
 					done <- util.SoftKill(app.PID)
@@ -95,6 +94,7 @@ func buildKillCmd() *cobra.Command {
 				fmt.Println("Killing app....")
 				actionFunc()
 			}
+			fmt.Println(tml.Sprintf("<green>App successfully killed 💀</green>"))
 			return nil
 		},
 	}
