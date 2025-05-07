@@ -38,3 +38,6 @@ jobs:
 
       - name: Run Tests
         run: ./bin/task test
+
+      - name: Run Build all
+        run: ./bin/task build-all
