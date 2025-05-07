@@ -3,8 +3,8 @@
 * 🧑‍🔧 DX focused
 * 🌱 Lightweight footprint
 * 📄 Integrated log viewer
-* 🔌 Starts on boot _(only for 🐧 Linux via systemd)_
-* 🐧 Linux support (MacOS is experimental)
+* 🔌 Starts on boot _(via systemd)_
+* 🐧 Linux support
 
 [![asciicast](https://asciinema.org/a/se9dTCtVJJ0hyXkclU7kFSY5C.svg)](https://asciinema.org/a/se9dTCtVJJ0hyXkclU7kFSY5C?speed=2)
 

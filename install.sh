@@ -6,11 +6,6 @@ VERSION="$(curl -s https://api.github.com/repos/$REPO/releases/latest | jq -r .t
 OS="$(uname | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
 
-# Normalize OS to 'macos' if it's 'darwin'
-if [ "$OS" == "darwin" ]; then
-  OS="macos"
-fi
-
 # Normalize architecture
 case "$ARCH" in
   x86_64) ARCH="amd64" ;;
