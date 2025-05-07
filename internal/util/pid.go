@@ -3,8 +3,6 @@ package util
 import (
 	"errors"
 	"syscall"
-
-	"golang.org/x/sys/unix"
 )
 
 func PidExists(pid int) bool {
@@ -17,12 +15,4 @@ func PidExists(pid int) bool {
 		return false // process does not exist
 	}
 	return true // some other error (like EPERM), assume it exists
-}
-
-func SoftKill(pid int) error {
-	return syscall.Kill(pid, unix.SIGTERM)
-}
-
-func ForceKill(pid int) error {
-	return syscall.Kill(pid, unix.SIGKILL)
 }

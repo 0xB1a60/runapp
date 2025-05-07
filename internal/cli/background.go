@@ -73,7 +73,6 @@ func buildBackgroundCmd() *cobra.Command {
 			cmd.Dir = app.CWD
 			cmd.Stdout = stdoutFile
 			cmd.Stderr = stderrFile
-			cmd.SysProcAttr = backgroundSysProcAttr()
 
 			if err := cmd.Start(); err != nil {
 				app.ExitCode = ptr.Of(255)
