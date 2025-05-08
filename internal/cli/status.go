@@ -20,8 +20,6 @@ import (
 )
 
 func buildStatusCmd() *cobra.Command {
-	var appName string
-
 	var asJson bool
 	var asYaml bool
 
@@ -29,7 +27,13 @@ func buildStatusCmd() *cobra.Command {
 		Use:          "status",
 		SilenceUsage: true,
 		Short:        "Read the status of an app",
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		Args:         cobra.RangeArgs(0, 1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var appName string
+			if len(args) != 0 {
+				appName = args[0]
+			}
+
 			has, err := apps.HasAny()
 			if err != nil {
 				return err
@@ -151,7 +155,6 @@ func buildStatusCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&appName, "name", "", "name of an app")
 
 	cmd.Flags().BoolVar(&asJson, "json", false, "output as JSON")
 	cmd.Flags().BoolVar(&asYaml, "yaml", false, "output as YAML")

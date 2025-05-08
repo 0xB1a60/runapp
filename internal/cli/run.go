@@ -22,7 +22,6 @@ import (
 )
 
 func buildRunCmd() *cobra.Command {
-	var appName string
 	var runOnBoot bool
 	var command string
 	var skipLogs bool
@@ -32,7 +31,13 @@ func buildRunCmd() *cobra.Command {
 		Use:          "run",
 		SilenceUsage: true,
 		Short:        "Run an app",
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		Args:         cobra.RangeArgs(0, 1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var appName string
+			if len(args) != 0 {
+				appName = args[0]
+			}
+
 			entry := tui.FlagOrPromptEntry{
 				Value:        appName,
 				TUIFunc:      nameTextInput,
@@ -84,7 +89,7 @@ func buildRunCmd() *cobra.Command {
 
 			if existingApp, err := apps.Get(appName); err == nil {
 				if existingApp.IsRunning() && util.PidExists(existingApp.PID) {
-					return errors.New(tml.Sprintf("app is already running. Use <magenta>runapp kill --name %s</magenta> to stop it", appName))
+					return errors.New(tml.Sprintf("app is already running. Use <magenta>runapp kill %s</magenta> to stop it", appName))
 				}
 			}
 
@@ -96,7 +101,6 @@ func buildRunCmd() *cobra.Command {
 			return createAndRunApp(cmd.Context(), appName, runMode, command, skipLogs)
 		},
 	}
-	cmd.Flags().StringVar(&appName, "name", "", "name of an app")
 	cmd.Flags().BoolVar(&runOnBoot, "start-on-boot", false, "automatically start the app on boot")
 	cmd.Flags().BoolVar(&skipLogs, "skip-logs", false, "skip logs streaming after start")
 	cmd.Flags().BoolVar(&skipSystemdWarning, "skip-systemd-warning", false, "suppress warning if systemd service is not detected")
@@ -270,7 +274,7 @@ func createAndRunApp(ctx context.Context, name string, mode common.RunMode, comm
 		return err
 	}
 
-	cmd := exec.Command(os.Args[0], "background", "--name", name)
+	cmd := exec.Command(os.Args[0], "background", name)
 	cmd.Env = os.Environ()
 
 	if util.IsDebug() {

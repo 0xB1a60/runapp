@@ -25,8 +25,12 @@ tasks:
       - go build -o bin/{{.BINARY_NAME}} ./cmd
   build-all:
     desc: Build Go binaries for linux amd64/arm64
+    vars:
+      VERSION: '{{default "main" .VERSION}}'
     env:
       CGO_ENABLED: 0
+      GOOS: linux
+      GOARCH: amd64
     cmds:
-      - GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o release/{{.BINARY_NAME}}-linux-amd64 ./cmd
-      - GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o release/{{.BINARY_NAME}}-linux-arm64 ./cmd
+      - go build -ldflags="-s -w -X 'main.version={{.VERSION}}'" -o release/{{.BINARY_NAME}}-linux-amd64 ./cmd
+      - go build -ldflags="-s -w -X 'main.version={{.VERSION}}'" -o release/{{.BINARY_NAME}}-linux-arm64 ./cmd
