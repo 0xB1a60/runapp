@@ -16,13 +16,17 @@ import (
 )
 
 func buildKillCmd() *cobra.Command {
-	var appName string
-
 	cmd := &cobra.Command{
 		Use:          "kill",
 		SilenceUsage: true,
 		Short:        "Kill an app",
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		Args:         cobra.RangeArgs(0, 1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var appName string
+			if len(args) != 0 {
+				appName = args[0]
+			}
+
 			has, err := apps.HasAny()
 			if err != nil {
 				return err
@@ -98,7 +102,6 @@ func buildKillCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&appName, "name", "", "name of app")
 	return cmd
 }
 

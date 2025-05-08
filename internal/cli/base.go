@@ -14,7 +14,7 @@ import (
 	"github.com/0xB1a60/runapp/internal/common"
 )
 
-func Start() error {
+func Start(version string) error {
 	var asJson bool
 	var asYaml bool
 
@@ -70,13 +70,17 @@ func Start() error {
 	rootCmd.Flags().BoolVar(&asYaml, "yaml", false, "output as YAML")
 	rootCmd.MarkFlagsMutuallyExclusive("json", "yaml")
 
+	rootCmd.AddCommand(buildVersionCmd(version))
+
 	rootCmd.AddCommand(buildRunCmd())
 	rootCmd.AddCommand(buildRestartCmd())
 	rootCmd.AddCommand(buildLogsCmd())
 	rootCmd.AddCommand(buildStatusCmd())
 
 	rootCmd.AddCommand(buildKillCmd())
+
 	rootCmd.AddCommand(buildRemoveCmd())
+	rootCmd.AddCommand(buildRemoveManyCmd())
 
 	rootCmd.AddCommand(buildBackgroundCmd())
 

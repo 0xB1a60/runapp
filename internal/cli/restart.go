@@ -16,14 +16,19 @@ import (
 )
 
 func buildRestartCmd() *cobra.Command {
-	var appName string
 	var skipLogs bool
 
 	cmd := &cobra.Command{
 		Use:          "restart",
 		SilenceUsage: true,
 		Short:        "Restart an app",
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		Args:         cobra.RangeArgs(0, 1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var appName string
+			if len(args) != 0 {
+				appName = args[0]
+			}
+
 			has, err := apps.HasAny()
 			if err != nil {
 				return err
@@ -59,7 +64,7 @@ func buildRestartCmd() *cobra.Command {
 			}
 
 			if app.IsRunning() {
-				return errors.New(tml.Sprintf("app is running and cannot be restarted. Use <magenta>runapp kill --name %s</magenta> to stop it", app.Name))
+				return errors.New(tml.Sprintf("app is running and cannot be restarted. Use <magenta>runapp kill %s</magenta> to stop it", app.Name))
 			}
 
 			app.Status = common.AppStatusStarting
@@ -87,13 +92,12 @@ func buildRestartCmd() *cobra.Command {
 			return streamLogs(cmd.Context(), *app)
 		},
 	}
-	cmd.Flags().StringVar(&appName, "name", "", "name of an app")
 	cmd.Flags().BoolVar(&skipLogs, "skip-logs", false, "skip logs streaming after restart")
 	return cmd
 }
 
 func runApp(app apps.App) error {
-	cmd := exec.Command(os.Args[0], "background", "--name", app.Name)
+	cmd := exec.Command(os.Args[0], "background", app.Name)
 	cmd.Env = os.Environ()
 
 	cmd.Stdout = os.Stdout

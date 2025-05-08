@@ -19,15 +19,19 @@ import (
 
 // Go does not natively support fork so we let's get creative
 func buildBackgroundCmd() *cobra.Command {
-	var appName string
-
 	cmd := &cobra.Command{
 		Use:                "background",
 		DisableAutoGenTag:  true,
 		Hidden:             true,
 		DisableSuggestions: true,
 		SilenceUsage:       true,
-		RunE: func(cobra *cobra.Command, _ []string) error {
+		Args:               cobra.ExactArgs(1),
+		RunE: func(cobraCmd *cobra.Command, args []string) error {
+			var appName string
+			if len(args) != 0 {
+				appName = args[0]
+			}
+
 			app, err := apps.Get(appName)
 			if err != nil {
 				return err
@@ -66,9 +70,9 @@ func buildBackgroundCmd() *cobra.Command {
 				}
 			}(stderrFile)
 
-			args := append(util.GetShellArgs(), app.Command)
+			cmdArgs := append(util.GetShellArgs(), app.Command)
 
-			cmd := exec.Command(args[0], args[1:]...)
+			cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 			cmd.Env = app.Env
 			cmd.Dir = app.CWD
 			cmd.Stdout = stdoutFile
@@ -130,7 +134,7 @@ func buildBackgroundCmd() *cobra.Command {
 				done <- nil
 			}()
 
-			ctx := cobra.Context()
+			ctx := cobraCmd.Context()
 
 			for {
 				select {
@@ -152,8 +156,6 @@ func buildBackgroundCmd() *cobra.Command {
 
 		},
 	}
-	cmd.Flags().StringVar(&appName, "name", "", "")
-	_ /*ignored as it's not reachable*/ = cmd.MarkPersistentFlagRequired("name")
 	return cmd
 }
 

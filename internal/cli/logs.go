@@ -19,13 +19,17 @@ import (
 )
 
 func buildLogsCmd() *cobra.Command {
-	var appName string
-
 	cmd := &cobra.Command{
 		Use:          "logs",
 		SilenceUsage: true,
 		Short:        "Stream the logs (stdout,stderr) of an app",
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		Args:         cobra.RangeArgs(0, 1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var appName string
+			if len(args) != 0 {
+				appName = args[0]
+			}
+
 			has, err := apps.HasAny()
 			if err != nil {
 				return err
@@ -63,7 +67,6 @@ func buildLogsCmd() *cobra.Command {
 			return streamLogs(cmd.Context(), *app)
 		},
 	}
-	cmd.Flags().StringVar(&appName, "name", "", "name of an app")
 	return cmd
 }
 

@@ -75,7 +75,7 @@ func TestStatus_NonExistent(t *testing.T) {
 	for name, tCase := range cases {
 		t.Run(name, func(t *testing.T) {
 
-			commandRes, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp status --name notexistapp "+tCase.extraParams, s.containerName))
+			commandRes, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp status notexistapp "+tCase.extraParams, s.containerName))
 			if tCase.expectedErr {
 				require.Error(t, err)
 			} else {
@@ -105,7 +105,7 @@ func TestNonExistentApp(t *testing.T) {
 	for name := range cases {
 		t.Run(name, func(t *testing.T) {
 
-			_, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp %s --name notexistapp", name, s.containerName))
+			_, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp %s notexistapp", name, s.containerName))
 			require.Error(t, err)
 		})
 	}
@@ -118,28 +118,28 @@ func TestLogs(t *testing.T) {
 	s := setup(t)
 	defer s.cleanUpFunc()
 
-	_, err := runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run --name my-app --start-on-boot --command 'echo "stdout"; echo "stderr" >&2'"`, s.containerName))
+	_, err := runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run my-app --start-on-boot --command 'echo "stdout"; echo "stderr" >&2'"`, s.containerName))
 	require.NoError(t, err)
 
-	listRes, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp logs --name my-app", s.containerName))
+	listRes, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp logs my-app", s.containerName))
 	require.NoError(t, err)
 	require.Contains(t, listRes.stdout, "stdout")
 	require.Contains(t, listRes.stderr, "\x1b[0m\x1b[31mstderr\x1b[39m\x1b[0m")
 }
 
-func TestRemove(t *testing.T) {
+func TestRemoveMany(t *testing.T) {
 	t.Parallel()
 
 	s := setup(t)
 	defer s.cleanUpFunc()
 
-	_, err := runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run --name sapp --start-on-boot --command 'exit 0;'"`, s.containerName))
+	_, err := runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run sapp --start-on-boot --command 'exit 0;'"`, s.containerName))
 	require.NoError(t, err)
 
-	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run --name fapp --start-on-boot --command 'exit 1;'"`, s.containerName))
+	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run fapp --start-on-boot --command 'exit 1;'"`, s.containerName))
 	require.NoError(t, err)
 
-	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run --name rapp --skip-logs --start-on-boot --command 'sleep 1200'"`, s.containerName))
+	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run rapp --skip-logs --start-on-boot --command 'sleep 1200'"`, s.containerName))
 	require.NoError(t, err)
 
 	listRes, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
@@ -154,7 +154,7 @@ func TestRemove(t *testing.T) {
 	require.Contains(t, list[1].Name, "fapp")
 	require.Contains(t, list[2].Name, "sapp")
 
-	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp remove --all-failed", s.containerName))
+	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp removemany --failed", s.containerName))
 	require.NoError(t, err)
 
 	listRes, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
@@ -167,7 +167,7 @@ func TestRemove(t *testing.T) {
 	require.Contains(t, list[0].Name, "rapp")
 	require.Contains(t, list[1].Name, "sapp")
 
-	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp remove --all-success", s.containerName))
+	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp removemany --success", s.containerName))
 	require.NoError(t, err)
 
 	listRes, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
@@ -186,7 +186,7 @@ func TestFlow(t *testing.T) {
 	s := setup(t)
 	defer s.cleanUpFunc()
 
-	_, err := runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run --name my-app --skip-logs --start-on-boot --command 'sleep 1200'"`, s.containerName))
+	_, err := runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run my-app --skip-logs --start-on-boot --command 'sleep 1200'"`, s.containerName))
 	require.NoError(t, err)
 
 	// get current status
@@ -201,7 +201,7 @@ func TestFlow(t *testing.T) {
 	require.Equal(t, common.AppStatusRunning, list[0].Status)
 
 	// kill it
-	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp kill --name=my-app", s.containerName))
+	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp kill my-app", s.containerName))
 	require.NoError(t, err)
 
 	// get status after kill
@@ -215,7 +215,7 @@ func TestFlow(t *testing.T) {
 	require.Equal(t, common.AppStatusFailed, list[0].Status)
 
 	// restart it
-	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && /usr/local/bin/runapp restart --name=my-app --skip-logs"`, s.containerName))
+	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && /usr/local/bin/runapp restart my-app --skip-logs"`, s.containerName))
 	require.NoError(t, err)
 
 	// get status after restart
@@ -246,11 +246,11 @@ func TestFlow(t *testing.T) {
 	require.Equal(t, common.AppStatusRunning, list[0].Status)
 
 	// kill it again
-	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp kill --name=my-app", s.containerName))
+	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp kill my-app", s.containerName))
 	require.NoError(t, err)
 
 	// remove it
-	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp remove --name=my-app", s.containerName))
+	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp remove my-app", s.containerName))
 	require.NoError(t, err)
 
 	// get status after removal
