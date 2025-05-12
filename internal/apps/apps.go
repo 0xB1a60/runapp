@@ -49,9 +49,9 @@ func (app *App) SaveToFile() error {
 // because runapp is daemon-less sometimes processes will be killed from the outside and runapp will show them as running
 func (app *App) checkAndCorrectStatus() {
 	if app.Status == common.AppStatusRunning && !util.PidExists(app.PID) {
-		app.Status = common.AppStatusSuccess
-		if app.ExitCode != nil && *app.ExitCode != 0 {
-			app.Status = common.AppStatusFailed
+		app.Status = common.AppStatusFailed
+		if app.ExitCode != nil && *app.ExitCode == 0 {
+			app.Status = common.AppStatusSuccess
 		}
 		if err := app.SaveToFile(); err != nil {
 			util.DebugLog("error saving app to file: %v", err)

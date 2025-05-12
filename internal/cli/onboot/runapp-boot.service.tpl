@@ -4,7 +4,8 @@ After=network.target
 
 [Service]
 ExecStart=$BINARY_PATH onboot
-Restart=no
+Restart=on-failure
+RestartSec=5s
 # when onboot process finished do not terminate the started apps
 KillMode=none
 
