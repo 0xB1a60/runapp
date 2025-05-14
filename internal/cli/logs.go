@@ -146,7 +146,12 @@ func printLines(w io.Writer, filename string, asError bool) error {
 		}
 	}(file)
 
+	const maxCapacity = 10 * 1024 * 1024
+	buf := make([]byte, maxCapacity)
+
 	scanner := bufio.NewScanner(file)
+	scanner.Buffer(buf, maxCapacity)
+
 	for scanner.Scan() {
 		if asError {
 			if _, err := fmt.Fprintln(w, tml.Sprintf("<red>%s</red>", scanner.Text())); err != nil {
