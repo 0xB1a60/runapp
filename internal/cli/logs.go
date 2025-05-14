@@ -1,11 +1,9 @@
 package cli
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"time"
 
@@ -14,8 +12,8 @@ import (
 
 	"github.com/0xB1a60/runapp/internal/apps"
 	"github.com/0xB1a60/runapp/internal/common"
+	"github.com/0xB1a60/runapp/internal/logs"
 	"github.com/0xB1a60/runapp/internal/tui"
-	"github.com/0xB1a60/runapp/internal/util"
 )
 
 func buildLogsCmd() *cobra.Command {
@@ -64,26 +62,19 @@ func buildLogsCmd() *cobra.Command {
 				return err
 			}
 
-			return streamLogs(cmd.Context(), *app)
+			return viewLogs(cmd.Context(), *app)
 		},
 	}
 	return cmd
 }
 
-func streamLogs(ctx context.Context, app apps.App) error {
-	fmt.Println(tml.Sprintf("<yellow>▶ Streaming logs for app: %s. You can stop the streaming with CTRL+C, the process won't be interrupted</yellow>", app.Name))
-
+func viewLogs(ctx context.Context, app apps.App) error {
 	if !app.IsRunning() {
-		if err := printLines(os.Stdout, app.StdoutPath, false); err != nil {
-			return err
-		}
-		if err := printLines(os.Stderr, app.StderrPath, true); err != nil {
-			return err
-		}
-		return nil
+		return logs.PrintLines(app)
 	}
 
-	logs, err := apps.ReadLogs(ctx, app)
+	fmt.Println(tml.Sprintf("<yellow>▶ Streaming logs for app: %s. You can stop the streaming with CTRL+C, the process won't be interrupted</yellow>", app.Name))
+	logStream, err := logs.Stream(ctx, app)
 	if err != nil {
 		return err
 	}
@@ -119,7 +110,7 @@ func streamLogs(ctx context.Context, app apps.App) error {
 						continue
 					}
 				}
-			case log := <-logs:
+			case log := <-logStream:
 				if log.IsErr {
 					fmt.Fprintln(os.Stderr, tml.Sprintf("<red>%s</red>", log.Value)) // no lint // handling this error is not needed
 					continue
@@ -132,40 +123,5 @@ func streamLogs(ctx context.Context, app apps.App) error {
 	}()
 
 	<-ctx.Done()
-	return nil
-}
-
-func printLines(w io.Writer, filename string, asError bool) error {
-	file, err := os.Open(filename)
-	if err != nil {
-		return fmt.Errorf("failed to open file %s: %w", filename, err)
-	}
-	defer func(file *os.File) {
-		if err := file.Close(); err != nil {
-			util.DebugLog("Failed to close file %s: %s", filename, err)
-		}
-	}(file)
-
-	const maxCapacity = 10 * 1024 * 1024
-	buf := make([]byte, maxCapacity)
-
-	scanner := bufio.NewScanner(file)
-	scanner.Buffer(buf, maxCapacity)
-
-	for scanner.Scan() {
-		if asError {
-			if _, err := fmt.Fprintln(w, tml.Sprintf("<red>%s</red>", scanner.Text())); err != nil {
-				return err
-			}
-			continue
-		}
-		if _, err := fmt.Fprintln(w, scanner.Text()); err != nil {
-			return err
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error reading file %s: %w", filename, err)
-	}
 	return nil
 }

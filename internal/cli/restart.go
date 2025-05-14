@@ -89,7 +89,7 @@ func buildRestartCmd() *cobra.Command {
 			if skipLogs {
 				return nil
 			}
-			return streamLogs(cmd.Context(), *app)
+			return viewLogs(cmd.Context(), *app)
 		},
 	}
 	cmd.Flags().BoolVar(&skipLogs, "skip-logs", false, "skip logs streaming after restart")

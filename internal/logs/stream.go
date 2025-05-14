@@ -1,9 +1,11 @@
-package apps
+package logs
 
 import (
 	"context"
 
 	"github.com/nxadm/tail"
+
+	"github.com/0xB1a60/runapp/internal/apps"
 )
 
 type Log struct {
@@ -11,18 +13,13 @@ type Log struct {
 	IsErr bool
 }
 
-const (
-	// 10MB
-	maxCapacity = 10 * 1024 * 1024
-)
-
-func ReadLogs(ctx context.Context, app App) (<-chan Log, error) {
+func Stream(ctx context.Context, app apps.App) (<-chan Log, error) {
 	tailCfg := tail.Config{
 		Follow:        true,
 		ReOpen:        true,
 		MustExist:     false,
 		CompleteLines: true,
-		MaxLineSize:   maxCapacity,
+		MaxLineSize:   maxBufferCapacity,
 		Logger:        tail.DiscardingLogger, // ignore logs from tail itself
 	}
 
