@@ -22,6 +22,7 @@ func PrintLines(app apps.App) error {
 	return nil
 }
 
+// printFile prints the contents of a file to the given writer
 func printFile(w io.Writer, filename string, asError bool) error {
 	file, err := os.Open(filename)
 	if err != nil {

@@ -13,6 +13,7 @@ type Log struct {
 	IsErr bool
 }
 
+// Stream reads the logs from the given app's stdout and stderr files
 func Stream(ctx context.Context, app apps.App) (<-chan Log, error) {
 	tailCfg := tail.Config{
 		Follow:        true,

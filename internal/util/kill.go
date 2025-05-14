@@ -5,6 +5,7 @@ import (
 	"github.com/shirou/gopsutil/v4/process"
 )
 
+// collectChildren recursively collects all child processes of the given process
 func collectChildren(proc *process.Process) ([]*process.Process, error) {
 	var allChildren []*process.Process
 
@@ -28,6 +29,7 @@ func collectChildren(proc *process.Process) ([]*process.Process, error) {
 	return allChildren, nil
 }
 
+// applyToProcessAndChildren applies a function to the given process and all its children
 func applyToProcessAndChildren(pid int, applyFunc func(*process.Process) error) error {
 	root, err := process.NewProcess(int32(pid))
 	if err != nil {
@@ -48,12 +50,14 @@ func applyToProcessAndChildren(pid int, applyFunc func(*process.Process) error) 
 	return res
 }
 
+// SoftKill sends a SIGTERM signal to the process and its children
 func SoftKill(pid int) error {
 	return applyToProcessAndChildren(pid, func(proc *process.Process) error {
 		return proc.Terminate()
 	})
 }
 
+// ForceKill sends a SIGKILL signal to the process and its children
 func ForceKill(pid int) error {
 	return applyToProcessAndChildren(pid, func(proc *process.Process) error {
 		return proc.Kill()
