@@ -1,4 +1,4 @@
-package cli
+package logs
 
 import (
 	"bytes"
@@ -49,7 +49,7 @@ func TestPrintLines(t *testing.T) {
 			require.NoError(t, tmpfile.Close())
 
 			var buf bytes.Buffer
-			require.NoError(t, printLines(&buf, tmpfile.Name(), tc.asError))
+			require.NoError(t, printFile(&buf, tmpfile.Name(), tc.asError))
 
 			// Strip ANSI color codes to compare raw text if needed
 			output := strings.TrimSpace(buf.String())
@@ -62,7 +62,7 @@ func TestPrintLines(t *testing.T) {
 
 func TestPrintLines_FileNotExist(t *testing.T) {
 	var buf bytes.Buffer
-	err := printLines(&buf, "nonexistent.txt", false)
+	err := printFile(&buf, "nonexistent.txt", false)
 	if err == nil || !strings.Contains(err.Error(), "failed to open file") {
 		require.NoError(t, err)
 	}

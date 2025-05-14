@@ -299,5 +299,5 @@ func createAndRunApp(ctx context.Context, name string, mode common.RunMode, comm
 	if skipLogs {
 		return nil
 	}
-	return streamLogs(ctx, app)
+	return viewLogs(ctx, app)
 }
