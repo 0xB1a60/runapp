@@ -23,6 +23,7 @@ func FileExists(value string) bool {
 	return false
 }
 
+// ResolvePath resolves a path, expanding the home directory if it starts with "~"
 func ResolvePath(path string) (string, error) {
 	if strings.HasPrefix(path, "~") {
 		home, err := os.UserHomeDir()
