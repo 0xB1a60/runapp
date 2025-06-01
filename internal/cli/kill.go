@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -67,42 +68,46 @@ func buildKillCmd() *cobra.Command {
 				return errors.New("app is not running")
 			}
 
-			actionFunc := func() {
-				done := make(chan error)
-				go func() {
-					done <- util.SoftKill(app.PID)
-				}()
-
-				select {
-				case err := <-done:
-					if err != nil {
-						util.DebugLog("Failed to stop app: %v", err)
-					}
-					util.DebugLog("app stopped")
-				case <-time.After(time.Second * 10):
-					util.DebugLog("force killing app")
-					if err := util.ForceKill(app.PID); err != nil {
-						util.DebugLog("failed to force kill app: %v", err)
-					}
-					util.DebugLog("app force killed")
-				case <-cmd.Context().Done():
-				}
-			}
-
-			err = spinner.New().
-				Title("Killing app...").
-				Action(actionFunc).
-				Run()
-			if err != nil {
-				util.DebugLog("error in kill spinner: %v", err)
-				fmt.Println("Killing app....")
-				actionFunc()
-			}
+			killApp(cmd.Context(), app)
 			fmt.Println(tml.Sprintf("<green>App successfully killed 💀</green>"))
 			return nil
 		},
 	}
 	return cmd
+}
+
+func killApp(ctx context.Context, app *apps.App) {
+	actionFunc := func() {
+		done := make(chan error)
+		go func() {
+			done <- util.SoftKill(app.PID)
+		}()
+
+		select {
+		case err := <-done:
+			if err != nil {
+				util.DebugLog("Failed to stop app: %v", err)
+			}
+			util.DebugLog("app stopped")
+		case <-time.After(time.Second * 10):
+			util.DebugLog("force killing app")
+			if err := util.ForceKill(app.PID); err != nil {
+				util.DebugLog("failed to force kill app: %v", err)
+			}
+			util.DebugLog("app force killed")
+		case <-ctx.Done():
+		}
+	}
+
+	err := spinner.New().
+		Title("Killing app...").
+		Action(actionFunc).
+		Run()
+	if err != nil {
+		util.DebugLog("error in kill spinner: %v", err)
+		fmt.Println("Killing app....")
+		actionFunc()
+	}
 }
 
 func namePickerValidator(list []apps.App, appName string) error {

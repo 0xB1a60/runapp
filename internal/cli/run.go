@@ -54,7 +54,7 @@ func buildRunCmd() *cobra.Command {
 			}
 
 			if !runOnBoot {
-				if value, err := onBootSelect(); err != nil {
+				if value, err := tui.OnBool("Do you want your app to start on boot?"); err != nil {
 					util.DebugLog("error while building on-boot: %s", err)
 				} else {
 					runOnBoot = value
@@ -62,7 +62,7 @@ func buildRunCmd() *cobra.Command {
 			}
 
 			if runOnBoot && !skipSystemdWarning && !util.FileExists(common.SystemdSvcPath) {
-				continueWithoutSystemd, err := systemdSvcExistPicker()
+				continueWithoutSystemd, err := tui.OnBool(fmt.Sprintf("Systemd svc: %s does not exist, are you sure want to continue?", common.SystemdSvcPath))
 				if err != nil {
 					util.DebugLog("error while building systemd svc: %s", err)
 				} else {
@@ -89,7 +89,16 @@ func buildRunCmd() *cobra.Command {
 
 			if existingApp, err := apps.Get(appName); err == nil {
 				if existingApp.IsRunning() && util.PidExists(existingApp.PID) {
-					return errors.New(tml.Sprintf("app is already running. Use <magenta>runapp kill %s</magenta> to stop it", appName))
+
+					doRestart, err := tui.OnBool("App is already running, do you want to kill it?")
+					if err != nil {
+						util.DebugLog("failed to create run confirmation")
+						return errors.New(tml.Sprintf("app is already running. Use <magenta>runapp kill %s</magenta> to stop it", appName))
+					}
+					if !doRestart {
+						return nil
+					}
+					killApp(cmd.Context(), existingApp)
 				}
 			}
 
@@ -154,45 +163,6 @@ func nameValidateFunc(value string) error {
 		return errors.New("name must only contain lowercase, alphanumeric and -_")
 	}
 	return nil
-}
-
-const (
-	Yes = "yes"
-	No  = "no"
-)
-
-func onBootSelect() (bool, error) {
-	var value bool
-	form := huh.NewForm(huh.NewGroup(
-		huh.NewSelect[bool]().
-			Title("Do you want your app to start on boot?").
-			Options(
-				huh.NewOption(No, false),
-				huh.NewOption(Yes, true),
-			).
-			Value(&value),
-	)).WithTheme(huh.ThemeBase())
-	if err := form.Run(); err != nil {
-		return false, err
-	}
-	return value, nil
-}
-
-func systemdSvcExistPicker() (bool, error) {
-	var value bool
-	form := huh.NewForm(huh.NewGroup(
-		huh.NewSelect[bool]().
-			Title(fmt.Sprintf("Systemd svc: %s does not exist, are you sure want to continue?", common.SystemdSvcPath)).
-			Options(
-				huh.NewOption(No, false),
-				huh.NewOption(Yes, true),
-			).
-			Value(&value),
-	)).WithTheme(huh.ThemeBase())
-	if err := form.Run(); err != nil {
-		return false, err
-	}
-	return value, nil
 }
 
 func commandText() (*string, error) {
