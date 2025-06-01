@@ -62,7 +62,15 @@ func buildRemoveCmd() *cobra.Command {
 			}
 
 			if app.IsRunning() {
-				return errors.New(tml.Sprintf("app is running and cannot be removed. Use <magenta>runapp kill %s</magenta> to stop it", app.Name))
+				doRemove, err := tui.OnBool("App is already running, do you want to remove it?")
+				if err != nil {
+					util.DebugLog("failed to create remove confirmation")
+					return errors.New(tml.Sprintf("app is running and cannot be removed. Use <magenta>runapp kill %s</magenta> to stop it", app.Name))
+				}
+				if !doRemove {
+					return nil
+				}
+				killApp(cmd.Context(), app)
 			}
 			return os.RemoveAll(app.ConfigPath)
 		},

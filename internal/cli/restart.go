@@ -13,6 +13,7 @@ import (
 	"github.com/0xB1a60/runapp/internal/apps"
 	"github.com/0xB1a60/runapp/internal/common"
 	"github.com/0xB1a60/runapp/internal/tui"
+	"github.com/0xB1a60/runapp/internal/util"
 )
 
 func buildRestartCmd() *cobra.Command {
@@ -64,7 +65,15 @@ func buildRestartCmd() *cobra.Command {
 			}
 
 			if app.IsRunning() {
-				return errors.New(tml.Sprintf("app is running and cannot be restarted. Use <magenta>runapp kill %s</magenta> to stop it", app.Name))
+				doRestart, err := tui.OnBool("App is already running, do you want to restart it?")
+				if err != nil {
+					util.DebugLog("failed to create restart confirmation")
+					return errors.New(tml.Sprintf("app is running and cannot be restarted. Use <magenta>runapp kill %s</magenta> to stop it", app.Name))
+				}
+				if !doRestart {
+					return nil
+				}
+				killApp(cmd.Context(), app)
 			}
 
 			app.Status = common.AppStatusStarting
