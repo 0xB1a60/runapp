@@ -11,7 +11,7 @@ require (
 	github.com/liamg/tml v0.7.0
 	github.com/moby/moby v28.3.0+incompatible
 	github.com/nxadm/tail v1.4.11
-	github.com/shirou/gopsutil/v4 v4.25.5
+	github.com/shirou/gopsutil/v4 v4.25.6
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/sync v0.15.0
