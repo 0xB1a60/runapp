@@ -3,7 +3,7 @@ module github.com/0xB1a60/runapp
 go 1.24
 
 require (
-	github.com/aquasecurity/table v1.10.0
+	github.com/aquasecurity/table v1.11.0
 	github.com/charmbracelet/huh v0.7.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20250505102704-9e8811d319bf
 	github.com/gotidy/ptr v1.4.0
