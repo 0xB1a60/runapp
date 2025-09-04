@@ -9,7 +9,7 @@ require (
 	github.com/gotidy/ptr v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/liamg/tml v0.7.0
-	github.com/moby/moby v28.3.3+incompatible
+	github.com/moby/moby v28.4.0+incompatible
 	github.com/nxadm/tail v1.4.11
 	github.com/shirou/gopsutil/v4 v4.25.8
 	github.com/spf13/cobra v1.10.1
