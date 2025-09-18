@@ -14,6 +14,7 @@ import (
 	"github.com/0xB1a60/runapp/internal/common"
 	"github.com/0xB1a60/runapp/internal/logs"
 	"github.com/0xB1a60/runapp/internal/tui"
+	"github.com/0xB1a60/runapp/internal/util"
 )
 
 func buildLogsCmd() *cobra.Command {
@@ -106,6 +107,13 @@ func viewLogs(ctx context.Context, app apps.App) error {
 							}
 						}
 						fmt.Println(msg)
+						cancelFunc()
+						continue
+					}
+				} else {
+					if errors.Is(err, apps.ErrNotFound) {
+						util.DebugLog("app does not exist anymore")
+						fmt.Fprintln(os.Stderr, tml.Sprintf("<red>%s</red>", "app was removed"))
 						cancelFunc()
 						continue
 					}

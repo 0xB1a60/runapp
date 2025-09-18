@@ -40,8 +40,14 @@ func Stream(ctx context.Context, app apps.App) (<-chan Log, error) {
 		for {
 			select {
 			case outLine := <-outTail.Lines:
+				if outLine == nil {
+					return
+				}
 				ch <- Log{Value: outLine.Text, IsErr: false}
 			case errLine := <-errTail.Lines:
+				if errLine == nil {
+					return
+				}
 				ch <- Log{Value: errLine.Text, IsErr: true}
 			case <-ctx.Done():
 				return
