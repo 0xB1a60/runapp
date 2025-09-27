@@ -3,11 +3,11 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/0xB1a60/runapp/internal/apps"
 	"github.com/0xB1a60/runapp/internal/common"
+	"github.com/stretchr/testify/require"
 )
 
 func TestListEmpty(t *testing.T) {

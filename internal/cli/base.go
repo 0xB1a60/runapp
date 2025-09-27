@@ -12,6 +12,7 @@ import (
 
 	"github.com/0xB1a60/runapp/internal/apps"
 	"github.com/0xB1a60/runapp/internal/common"
+	"github.com/0xB1a60/runapp/internal/util"
 )
 
 func Start(version string) error {
@@ -85,7 +86,9 @@ func Start(version string) error {
 	rootCmd.AddCommand(buildBackgroundCmd())
 
 	rootCmd.AddCommand(buildOnBootCmd())
-	rootCmd.AddCommand(buildInstallOnBootCmd())
+	if util.IsSystemd() {
+		rootCmd.AddCommand(buildInstallOnBootCmd())
+	}
 
 	return rootCmd.Execute()
 }
