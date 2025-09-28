@@ -22,6 +22,8 @@ import (
 )
 
 func buildRunCmd() *cobra.Command {
+	isSystemdUsed := util.IsSystemd()
+
 	var runOnBoot bool
 	var command string
 	var skipLogs bool
@@ -53,21 +55,23 @@ func buildRunCmd() *cobra.Command {
 				return err
 			}
 
-			if !runOnBoot {
-				if value, err := tui.OnBool("Do you want your app to start on boot?"); err != nil {
-					util.DebugLog("error while building on-boot: %s", err)
-				} else {
-					runOnBoot = value
+			if isSystemdUsed {
+				if !runOnBoot {
+					if value, err := tui.OnBool("Do you want your app to start on boot?"); err != nil {
+						util.DebugLog("error while building on-boot: %s", err)
+					} else {
+						runOnBoot = value
+					}
 				}
-			}
 
-			if runOnBoot && !skipSystemdWarning && !util.FileExists(common.SystemdSvcPath) {
-				continueWithoutSystemd, err := tui.OnBool(fmt.Sprintf("Systemd svc: %s does not exist, are you sure want to continue?", common.SystemdSvcPath))
-				if err != nil {
-					util.DebugLog("error while building systemd svc: %s", err)
-				} else {
-					if !continueWithoutSystemd {
-						return nil
+				if runOnBoot && !skipSystemdWarning && !util.FileExists(common.SystemdSvcPath) {
+					continueWithoutSystemd, err := tui.OnBool(fmt.Sprintf("Systemd svc: %s does not exist, are you sure want to continue?", common.SystemdSvcPath))
+					if err != nil {
+						util.DebugLog("error while building systemd svc: %s", err)
+					} else {
+						if !continueWithoutSystemd {
+							return nil
+						}
 					}
 				}
 			}
@@ -112,7 +116,11 @@ func buildRunCmd() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&runOnBoot, "start-on-boot", false, "automatically start the app on boot")
 	cmd.Flags().BoolVar(&skipLogs, "skip-logs", false, "skip logs streaming after start")
-	cmd.Flags().BoolVar(&skipSystemdWarning, "skip-systemd-warning", false, "suppress warning if systemd service is not detected")
+
+	if isSystemdUsed {
+		cmd.Flags().BoolVar(&skipSystemdWarning, "skip-systemd-warning", false, "suppress warning if systemd service is not detected")
+	}
+
 	cmd.Flags().StringVar(&command, "command", "", "command that will be executed")
 	return cmd
 }

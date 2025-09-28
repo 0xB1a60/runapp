@@ -1,6 +1,9 @@
 package util
 
 import (
+	"syscall"
+	"time"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/shirou/gopsutil/v4/process"
 )
@@ -29,8 +32,7 @@ func collectChildren(proc *process.Process) ([]*process.Process, error) {
 	return allChildren, nil
 }
 
-// applyToProcessAndChildren applies a function to the given process and all its children
-func applyToProcessAndChildren(pid int, applyFunc func(*process.Process) error) error {
+func killProcessAndChildren(pid int, signal syscall.Signal) error {
 	root, err := process.NewProcess(int32(pid))
 	if err != nil {
 		return err
@@ -41,25 +43,50 @@ func applyToProcessAndChildren(pid int, applyFunc func(*process.Process) error) 
 		return err
 	}
 
-	var res error
-	for _, proc := range append(children, root) {
-		if err := applyFunc(proc); err != nil {
-			res = multierror.Append(res, err)
+	allProcesses := append(children, root)
+
+	var multiErr error
+	for _, proc := range allProcesses {
+		if err := proc.SendSignal(signal); err != nil {
+			multiErr = multierror.Append(multiErr, err)
 		}
 	}
-	return res
+	if multiErr != nil {
+		return multiErr
+	}
+
+	timeout := time.After(10 * time.Second)
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-timeout:
+			DebugLog("killProcessAndChildren: waiting for pid and children death timeout exceeded")
+			return nil
+		case <-ticker.C:
+			var exist = false
+			for _, proc := range allProcesses {
+				if PidExists(int(proc.Pid)) {
+					exist = true
+					break
+				}
+			}
+			if exist {
+				time.Sleep(50 * time.Millisecond)
+				continue
+			}
+			return nil
+		}
+	}
 }
 
 // SoftKill sends a SIGTERM signal to the process and its children
 func SoftKill(pid int) error {
-	return applyToProcessAndChildren(pid, func(proc *process.Process) error {
-		return proc.Terminate()
-	})
+	return killProcessAndChildren(pid, syscall.SIGTERM)
 }
 
 // ForceKill sends a SIGKILL signal to the process and its children
 func ForceKill(pid int) error {
-	return applyToProcessAndChildren(pid, func(proc *process.Process) error {
-		return proc.Kill()
-	})
+	return killProcessAndChildren(pid, syscall.SIGKILL)
 }

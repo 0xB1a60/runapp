@@ -4,7 +4,7 @@
 * 🌱 Lightweight footprint
 * 📄 Integrated log viewer
 * 🔌 Starts on boot _(via systemd)_
-* 🐧 Linux support
+* 🐧 Linux/MacOS support
 
 [![asciicast](https://asciinema.org/a/se9dTCtVJJ0hyXkclU7kFSY5C.svg)](https://asciinema.org/a/se9dTCtVJJ0hyXkclU7kFSY5C?speed=2)
 

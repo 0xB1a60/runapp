@@ -28,13 +28,15 @@ tasks:
       - go build -o bin/{{.BINARY_NAME}} ./cmd
 
   build-all:
-    desc: Build Go binaries for linux amd64/arm64
+    desc: Build Go binaries for linux/darwin amd64/arm64
     vars:
       VERSION: '{{default "main" .VERSION}}'
     env:
       CGO_ENABLED: 0
-      GOOS: linux
-      GOARCH: amd64
     cmds:
-      - go build -ldflags="-s -w -X 'main.version={{.VERSION}}'" -o release/{{.BINARY_NAME}}-linux-amd64 ./cmd
-      - go build -ldflags="-s -w -X 'main.version={{.VERSION}}'" -o release/{{.BINARY_NAME}}-linux-arm64 ./cmd
+      - for:
+          matrix:
+            OS: [ 'linux', 'darwin' ]
+            ARCH: [ 'amd64', 'arm64' ]
+        cmd:
+          GOOS={{.ITEM.OS}} GOARCH={{.ITEM.ARCH}} go build -ldflags="-s -w -X 'main.version={{.VERSION}}'" -o release/{{.BINARY_NAME}}-{{.ITEM.OS}}-{{.ITEM.ARCH}} ./cmd
