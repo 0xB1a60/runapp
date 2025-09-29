@@ -1,11 +1,9 @@
 package internal
 
 import (
-	"encoding/json"
-	"fmt"
+	"context"
 	"testing"
 
-	"github.com/0xB1a60/runapp/internal/apps"
 	"github.com/0xB1a60/runapp/internal/common"
 	"github.com/stretchr/testify/require"
 )
@@ -25,12 +23,12 @@ func TestListEmpty(t *testing.T) {
 		"default": {
 			expected: common.NoAppsMessage,
 		},
-		"json": {
-			extraParams: "--json",
-			expected:    "[]",
-		},
 		"yaml": {
 			extraParams: "--yaml",
+			expected:    "[]\n",
+		},
+		"json": {
+			extraParams: "--json",
 			expected:    "[]",
 		},
 	}
@@ -38,10 +36,10 @@ func TestListEmpty(t *testing.T) {
 	for name, tCase := range cases {
 		t.Run(name, func(t *testing.T) {
 
-			commandRes, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp "+tCase.extraParams, s.containerName))
-			require.NoError(t, err)
-			require.NotEmpty(t, commandRes.combined)
-			require.Equal(t, tCase.expected, commandRes.combined[0])
+			res := s.exec(tCase.extraParams)
+			require.Equal(t, tCase.expected, res.stdout)
+			require.Empty(t, res.stderr)
+			require.Equal(t, 0, res.exitCode)
 		})
 	}
 }
@@ -55,34 +53,31 @@ func TestStatus_NonExistent(t *testing.T) {
 	type testCase struct {
 		extraParams string
 		expected    string
-		expectedErr bool
 	}
+
+	runRes := s.exec(`run fapp --start-on-boot --command 'exit 1;'`, addShellSH())
+	require.Equal(t, 0, runRes.exitCode)
 
 	cases := map[string]testCase{
 		"default": {
-			expected: common.NoAppsMessage,
+			expected: "Error: app: notexistapp does not exist",
 		},
 		"json": {
 			extraParams: "--json",
-			expectedErr: true,
+			expected:    `{"error":"not_found"}`,
 		},
 		"yaml": {
 			extraParams: "--yaml",
-			expectedErr: true,
+			expected:    "error: not_found\n",
 		},
 	}
 
 	for name, tCase := range cases {
 		t.Run(name, func(t *testing.T) {
 
-			commandRes, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp status notexistapp "+tCase.extraParams, s.containerName))
-			if tCase.expectedErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				require.NotEmpty(t, commandRes.combined)
-				require.Equal(t, tCase.expected, commandRes.combined[0])
-			}
+			res := s.exec("status notexistapp " + tCase.extraParams)
+			require.Equal(t, tCase.expected, res.stderr)
+			require.Equal(t, 1, res.exitCode)
 		})
 	}
 }
@@ -92,6 +87,9 @@ func TestNonExistentApp(t *testing.T) {
 
 	s := setup(t)
 	defer s.cleanUpFunc()
+
+	runRes := s.exec(`run fapp --start-on-boot --command 'exit 1;'`, addShellSH())
+	require.Equal(t, 0, runRes.exitCode)
 
 	type testCase struct {
 	}
@@ -104,12 +102,11 @@ func TestNonExistentApp(t *testing.T) {
 
 	for name := range cases {
 		t.Run(name, func(t *testing.T) {
-
-			_, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp %s notexistapp", name, s.containerName))
-			require.Error(t, err)
+			res := s.exec(name + " notexistapp")
+			require.Equal(t, 0, runRes.exitCode)
+			require.Equal(t, "Error: app: notexistapp does not exist", res.stderr)
 		})
 	}
-
 }
 
 func TestLogs(t *testing.T) {
@@ -118,13 +115,12 @@ func TestLogs(t *testing.T) {
 	s := setup(t)
 	defer s.cleanUpFunc()
 
-	_, err := runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run my-app --start-on-boot --command 'echo "stdout"; echo "stderr" >&2'"`, s.containerName))
-	require.NoError(t, err)
+	runRes := s.exec(`run my-app --start-on-boot --command 'echo "stdout"; echo "stderr" >&2'`, addShellSH())
+	require.Equal(t, 0, runRes.exitCode)
 
-	listRes, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp logs my-app", s.containerName))
-	require.NoError(t, err)
-	require.Contains(t, listRes.stdout, "stdout")
-	require.Contains(t, listRes.stderr, "\x1b[0m\x1b[31mstderr\x1b[39m\x1b[0m")
+	res := s.exec(" logs my-app")
+	require.Contains(t, res.stdout, "stdout")
+	require.Contains(t, res.stderr, "\x1b[0m\x1b[31mstderr\x1b[39m\x1b[0m")
 }
 
 func TestRemoveMany(t *testing.T) {
@@ -133,50 +129,35 @@ func TestRemoveMany(t *testing.T) {
 	s := setup(t)
 	defer s.cleanUpFunc()
 
-	_, err := runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run sapp --start-on-boot --command 'exit 0;'"`, s.containerName))
-	require.NoError(t, err)
+	appRes := s.exec(`run sapp --start-on-boot --command 'exit 0;'`, addShellSH())
+	require.Equal(t, 0, appRes.exitCode)
 
-	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run fapp --start-on-boot --command 'exit 1;'"`, s.containerName))
-	require.NoError(t, err)
+	appRes = s.exec(`run fapp --start-on-boot --command 'exit 1;'`, addShellSH())
+	require.Equal(t, 0, appRes.exitCode)
 
-	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run rapp --skip-logs --start-on-boot --command 'sleep 1200'"`, s.containerName))
-	require.NoError(t, err)
+	appRes = s.exec(`run rapp --skip-logs --start-on-boot --command 'sleep 1200'`, addShellSH())
+	require.Equal(t, 0, appRes.exitCode)
 
-	listRes, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
-	require.NoError(t, err)
-	require.NotEmpty(t, listRes.combined)
-
-	var list []apps.App
-	require.NoError(t, json.Unmarshal([]byte(listRes.combined[0]), &list))
+	list := s.listApps()
 	require.Len(t, list, 3)
 
 	require.Contains(t, list[0].Name, "rapp")
 	require.Contains(t, list[1].Name, "fapp")
 	require.Contains(t, list[2].Name, "sapp")
 
-	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp removemany --failed", s.containerName))
-	require.NoError(t, err)
+	removeManyFailedRes := s.exec(`removemany --failed`)
+	require.Equal(t, 0, removeManyFailedRes.exitCode)
 
-	listRes, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
-	require.NoError(t, err)
-	require.NotEmpty(t, listRes.combined)
-
-	require.NoError(t, json.Unmarshal([]byte(listRes.combined[0]), &list))
+	list = s.listApps()
 	require.Len(t, list, 2)
-
 	require.Contains(t, list[0].Name, "rapp")
 	require.Contains(t, list[1].Name, "sapp")
 
-	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp removemany --success", s.containerName))
-	require.NoError(t, err)
+	removeManySuccessRes := s.exec(`removemany --success`)
+	require.Equal(t, 0, removeManySuccessRes.exitCode)
 
-	listRes, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
-	require.NoError(t, err)
-	require.NotEmpty(t, listRes.combined)
-
-	require.NoError(t, json.Unmarshal([]byte(listRes.combined[0]), &list))
+	list = s.listApps()
 	require.Len(t, list, 1)
-
 	require.Contains(t, list[0].Name, "rapp")
 }
 
@@ -186,78 +167,57 @@ func TestFlow(t *testing.T) {
 	s := setup(t)
 	defer s.cleanUpFunc()
 
-	_, err := runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && runapp run my-app --skip-logs --start-on-boot --command 'sleep 1200'"`, s.containerName))
-	require.NoError(t, err)
+	appRes := s.exec(`run my-app --skip-logs --start-on-boot --command 'sleep 1200'`, addShellSH())
+	require.Equal(t, 0, appRes.exitCode)
 
 	// get current status
-	listRes, err := runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
-	require.NoError(t, err)
-	require.NotEmpty(t, listRes.combined)
-
-	var list []apps.App
-	require.NoError(t, json.Unmarshal([]byte(listRes.combined[0]), &list))
+	list := s.listApps()
 	require.Len(t, list, 1)
 	require.Equal(t, "my-app", list[0].Name)
 	require.Equal(t, common.AppStatusRunning, list[0].Status)
 
 	// kill it
-	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp kill my-app", s.containerName))
-	require.NoError(t, err)
+	killRes := s.exec(`kill my-app`, addShellSH())
+	require.Equal(t, 0, killRes.exitCode)
 
 	// get status after kill
-	listRes, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
-	require.NoError(t, err)
-	require.NotEmpty(t, listRes.combined)
-
-	require.NoError(t, json.Unmarshal([]byte(listRes.combined[0]), &list))
+	list = s.listApps()
 	require.Len(t, list, 1)
 	require.Equal(t, "my-app", list[0].Name)
 	require.Equal(t, common.AppStatusFailed, list[0].Status)
 
 	// restart it
-	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && /usr/local/bin/runapp restart my-app --skip-logs"`, s.containerName))
-	require.NoError(t, err)
+	restartRes := s.exec(`restart my-app --skip-logs`, addShellSH())
+	require.Equal(t, 0, restartRes.exitCode)
 
 	// get status after restart
-	listRes, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
-	require.NoError(t, err)
-	require.NotEmpty(t, listRes.combined)
-
-	require.NoError(t, json.Unmarshal([]byte(listRes.combined[0]), &list))
+	list = s.listApps()
 	require.Len(t, list, 1)
 	require.Equal(t, "my-app", list[0].Name)
 	require.Equal(t, common.AppStatusRunning, list[0].Status)
 
 	// simulate onboot
-	_, err = runCommand(fmt.Sprintf("docker restart %s", s.containerName))
-	require.NoError(t, err)
+	require.NoError(t, s.container.Stop(context.Background(), nil))
+	require.NoError(t, s.container.Start(context.Background()))
 
-	_, err = runCommand(fmt.Sprintf(`docker exec %s /bin/bash -c "export SHELL=/bin/bash && /usr/local/bin/runapp onboot"`, s.containerName))
-	require.NoError(t, err)
+	onBootRes := s.exec(`onboot`, addShellSH())
+	require.Equal(t, 0, onBootRes.exitCode)
 
 	// get status after restart
-	listRes, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
-	require.NoError(t, err)
-	require.NotEmpty(t, listRes.combined)
-
-	require.NoError(t, json.Unmarshal([]byte(listRes.combined[0]), &list))
+	list = s.listApps()
 	require.Len(t, list, 1)
 	require.Equal(t, "my-app", list[0].Name)
 	require.Equal(t, common.AppStatusRunning, list[0].Status)
 
 	// kill it again
-	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp kill my-app", s.containerName))
-	require.NoError(t, err)
+	killRes = s.exec(`kill my-app`, addShellSH())
+	require.Equal(t, 0, killRes.exitCode)
 
 	// remove it
-	_, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp remove my-app", s.containerName))
-	require.NoError(t, err)
+	killRes = s.exec(`remove my-app`, addShellSH())
+	require.Equal(t, 0, killRes.exitCode)
 
 	// get status after removal
-	listRes, err = runCommand(fmt.Sprintf("docker exec %s /usr/local/bin/runapp --json", s.containerName))
-	require.NoError(t, err)
-	require.NotEmpty(t, listRes.combined)
-
-	require.NoError(t, json.Unmarshal([]byte(listRes.combined[0]), &list))
+	list = s.listApps()
 	require.Len(t, list, 0)
 }
