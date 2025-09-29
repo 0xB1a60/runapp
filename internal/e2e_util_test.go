@@ -2,86 +2,89 @@ package internal
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
-	"os"
-	"os/exec"
+	"encoding/json"
 	"strings"
 	"testing"
 
+	"github.com/moby/moby/pkg/stdcopy"
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/exec"
+
+	"github.com/0xB1a60/runapp/internal/apps"
+	"github.com/0xB1a60/runapp/internal/util"
 )
 
-type RunCommandResult struct {
-	cmd *exec.Cmd
+var (
+	inContainerAppPath = "/usr/local/bin/runapp"
+)
 
-	stderr []string
-	stdout []string
-
-	combined []string
+type execResult struct {
+	stdout   string
+	stderr   string
+	exitCode int
 }
 
-func runCommand(command string) (*RunCommandResult, error) {
-	cmd := exec.Command("/bin/bash", "-c", command)
-	cmd.Env = os.Environ()
+type SetupResult struct {
+	container testcontainers.Container
 
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+	exec        func(v string, options ...exec.ProcessOption) execResult
+	listApps    func() []apps.App
+	cleanUpFunc func()
+}
 
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
+func setup(t *testing.T) *SetupResult {
+	req := testcontainers.ContainerRequest{
+		Image: "ubuntu:24.04",
+		Cmd:   []string{"sleep", "infinity"},
+	}
+	container, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+	require.NoError(t, err)
 
-	if err := cmd.Run(); err != nil {
-		var exitError *exec.ExitError
-		if errors.As(err, &exitError) {
-			return nil, fmt.Errorf("%d -- %s -- %s -- %s", exitError.ExitCode(), string(exitError.Stderr), stderr.String(), stderr.String())
+	fromPath, err := util.ResolvePath("../bin/runapp")
+	require.NoError(t, err)
+
+	err = container.CopyFileToContainer(t.Context(), fromPath, inContainerAppPath, 0777)
+	require.NoError(t, err)
+
+	execAction := func(arg string, options ...exec.ProcessOption) execResult {
+		exitCode, r, err := container.Exec(t.Context(), []string{"/bin/sh", "-c", inContainerAppPath + " " + arg}, options...)
+		require.NoError(t, err)
+
+		// Use stdcopy.StdCopy to demultiplex stdout and stderr
+		var stdoutBuf, stderrBuf bytes.Buffer
+		_, err = stdcopy.StdCopy(&stdoutBuf, &stderrBuf, r)
+		require.NoError(t, err)
+
+		return execResult{
+			exitCode: exitCode,
+			stdout:   strings.TrimSuffix(stdoutBuf.String(), "\n"),
+			stderr:   strings.TrimSuffix(stderrBuf.String(), "\n"),
 		}
-		return nil, err
 	}
 
-	errLines := strings.Split(strings.TrimSpace(stderr.String()), "\n")
-	outLines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
+	return &SetupResult{
+		container: container,
+		exec:      execAction,
+		listApps: func() []apps.App {
+			execRes := execAction("--json")
+			require.Equal(t, 0, execRes.exitCode)
 
-	output := make([]string, 0, len(outLines)+len(errLines))
-	for _, line := range append(errLines, outLines...) {
-		if len(line) != 0 {
-			output = append(output, line)
-		}
-	}
-
-	return &RunCommandResult{
-		cmd:      cmd,
-		stderr:   errLines,
-		stdout:   outLines,
-		combined: output,
-	}, nil
-}
-
-type Setup struct {
-	containerName string
-	cleanUpFunc   func()
-}
-
-func setup(t *testing.T) *Setup {
-	containerName := "runapp-e2e-" + strings.ToLower(t.Name())
-	_, err := runCommand(fmt.Sprintf("docker rm -f %s", containerName))
-	require.NoError(t, err)
-
-	_, err = runCommand(fmt.Sprintf("docker create --name %s robertdebock/ubuntu sleep infinity", containerName))
-	require.NoError(t, err)
-
-	_, err = runCommand(fmt.Sprintf("docker cp ../bin/runapp %s:/usr/local/bin/runapp", containerName))
-	require.NoError(t, err)
-
-	_, err = runCommand(fmt.Sprintf("docker start %s", containerName))
-	require.NoError(t, err)
-
-	return &Setup{
-		containerName: containerName,
+			var list []apps.App
+			require.NoError(t, json.Unmarshal([]byte(execRes.stdout), &list))
+			return list
+		},
 		cleanUpFunc: func() {
-			// cleanup
-			_, err := runCommand(fmt.Sprintf("docker rm -f %s", containerName))
-			require.NoError(t, err)
+			require.NoError(t, container.Terminate(t.Context()))
 		},
 	}
+}
+
+func addShellSH() exec.ProcessOption {
+	return exec.WithEnv([]string{
+		"SHELL=/bin/sh",
+	})
 }

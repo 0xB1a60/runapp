@@ -50,7 +50,7 @@ func buildStatusCmd() *cobra.Command {
 						if err != nil {
 							return err
 						}
-						fmt.Println(string(b))
+						fmt.Fprintln(os.Stderr, string(b)) // no lint // handling this error is not needed
 						os.Exit(1)
 					}
 
@@ -58,7 +58,7 @@ func buildStatusCmd() *cobra.Command {
 					if err != nil {
 						return err
 					}
-					fmt.Println(string(b))
+					fmt.Fprintln(os.Stderr, string(b)) // no lint // handling this error is not needed
 					os.Exit(1)
 				}
 				fmt.Println(common.NoAppsMessage)
@@ -93,7 +93,7 @@ func buildStatusCmd() *cobra.Command {
 						if err != nil {
 							return err
 						}
-						fmt.Println(string(b))
+						fmt.Fprintln(os.Stderr, string(b)) // no lint // handling this error is not needed
 						os.Exit(1)
 					}
 
@@ -101,7 +101,7 @@ func buildStatusCmd() *cobra.Command {
 					if err != nil {
 						return err
 					}
-					fmt.Println(string(b))
+					fmt.Fprintln(os.Stderr, string(b)) // no lint // handling this error is not needed
 					os.Exit(1)
 				}
 
