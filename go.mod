@@ -11,7 +11,7 @@ require (
 	github.com/liamg/tml v0.7.0
 	github.com/moby/moby v28.5.2+incompatible
 	github.com/nxadm/tail v1.4.11
-	github.com/shirou/gopsutil/v4 v4.25.11
+	github.com/shirou/gopsutil/v4 v4.25.12
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.40.0
