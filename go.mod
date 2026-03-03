@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/huh/spinner v0.0.0-20250929091620-889bfce58d1e
 	github.com/gotidy/ptr v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/liamg/tml v0.7.0
+	github.com/liamg/tml v0.7.1
 	github.com/moby/moby v28.5.2+incompatible
 	github.com/nxadm/tail v1.4.11
 	github.com/shirou/gopsutil/v4 v4.26.2
