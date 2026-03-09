@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/aquasecurity/table v1.11.0
-	github.com/charmbracelet/huh v0.8.0
+	github.com/charmbracelet/huh v1.0.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20250929091620-889bfce58d1e
 	github.com/gotidy/ptr v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
