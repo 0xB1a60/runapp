@@ -1,6 +1,6 @@
 module github.com/0xB1a60/runapp
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/aquasecurity/table v1.11.0
@@ -15,7 +15,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.40.0
-	golang.org/x/sync v0.19.0
+	golang.org/x/sync v0.20.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
