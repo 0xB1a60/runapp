@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -97,13 +98,13 @@ func buildBackgroundCmd() *cobra.Command {
 			sig := make(chan os.Signal, 1)
 			signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 
-			killed := false
+			var killed atomic.Bool
 			go func() {
 				if err := cmd.Wait(); err != nil {
 					var exitError *exec.ExitError
 					if errors.As(err, &exitError) {
 						if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
-							if !killed {
+							if !killed.Load() {
 								app.ExitCode = ptr.Of(status.ExitStatus())
 								app.Status = common.AppStatusFailed
 								app.FinishedAt = ptr.Of(time.Now())
@@ -117,7 +118,7 @@ func buildBackgroundCmd() *cobra.Command {
 					}
 
 					writeStdErr(app.StderrPath, err)
-					if killed {
+					if killed.Load() {
 						setKilledStatus(app)
 					}
 					done <- err
@@ -140,14 +141,14 @@ func buildBackgroundCmd() *cobra.Command {
 				select {
 				case s := <-sig:
 					util.DebugLog("signal received: %s", s.String())
-					killed = true
+					killed.Store(true)
 					if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 						fmt.Println("failed to send SIGTERM", err)
 					}
 				case <-done:
 					return nil
 				case <-ctx.Done():
-					killed = true
+					killed.Store(true)
 					if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 						fmt.Println("failed to send SIGTERM", err)
 					}
@@ -160,7 +161,7 @@ func buildBackgroundCmd() *cobra.Command {
 }
 
 func writeStdErr(path string, err error) {
-	stderrFile, stdErr := os.Create(path)
+	stderrFile, stdErr := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if stdErr != nil {
 		fmt.Println("failed to open stderr", stdErr)
 		return
