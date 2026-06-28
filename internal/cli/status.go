@@ -164,10 +164,10 @@ func buildStatusCmd() *cobra.Command {
 }
 
 func formatEnv(values []string) string {
-	res := ""
+	var res strings.Builder
 	for _, value := range values {
 		parts := strings.Split(value, "=")
-		res += tml.Sprintf("<cyan>%s</cyan> = %s\n", parts[0], strings.Join(parts[1:], "="))
+		res.WriteString(tml.Sprintf("<cyan>%s</cyan> = %s\n", parts[0], strings.Join(parts[1:], "=")))
 	}
-	return res
+	return res.String()
 }

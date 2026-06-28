@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/charmbracelet/huh"
-	"github.com/gotidy/ptr"
 )
 
 func TextWithPlaceholder(title string, placeholder string) func() (*string, error) {
@@ -28,7 +27,7 @@ func TextWithPlaceholder(title string, placeholder string) func() (*string, erro
 		}
 
 		if len(value) == 0 {
-			return ptr.Of(placeholder), nil
+			return new(placeholder), nil
 		}
 		return &value, nil
 	}

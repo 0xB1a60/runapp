@@ -10,7 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gotidy/ptr"
 	"github.com/spf13/cobra"
 
 	"github.com/0xB1a60/runapp/internal/apps"
@@ -41,7 +40,7 @@ func buildBackgroundCmd() *cobra.Command {
 			app.Status = common.AppStatusRunning
 			app.PID = os.Getpid()
 			app.ExitCode = nil
-			app.StartedAt = ptr.Of(time.Now())
+			app.StartedAt = new(time.Now())
 
 			if err := app.SaveToFile(); err != nil {
 				fmt.Println("error saving cfg", err)
@@ -80,9 +79,9 @@ func buildBackgroundCmd() *cobra.Command {
 			cmd.Stderr = stderrFile
 
 			if err := cmd.Start(); err != nil {
-				app.ExitCode = ptr.Of(255)
+				app.ExitCode = new(255)
 				app.Status = common.AppStatusFailed
-				app.FinishedAt = ptr.Of(time.Now())
+				app.FinishedAt = new(time.Now())
 
 				if err := app.SaveToFile(); err != nil {
 					writeStdErr(app.StderrPath, err)
@@ -105,9 +104,9 @@ func buildBackgroundCmd() *cobra.Command {
 					if errors.As(err, &exitError) {
 						if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
 							if !killed.Load() {
-								app.ExitCode = ptr.Of(status.ExitStatus())
+								app.ExitCode = new(status.ExitStatus())
 								app.Status = common.AppStatusFailed
-								app.FinishedAt = ptr.Of(time.Now())
+								app.FinishedAt = new(time.Now())
 
 								if err := app.SaveToFile(); err != nil {
 									writeStdErr(app.StderrPath, err)
@@ -125,9 +124,9 @@ func buildBackgroundCmd() *cobra.Command {
 					return
 				}
 
-				app.ExitCode = ptr.Of(0)
+				app.ExitCode = new(0)
 				app.Status = common.AppStatusSuccess
-				app.FinishedAt = ptr.Of(time.Now())
+				app.FinishedAt = new(time.Now())
 
 				if err := app.SaveToFile(); err != nil {
 					writeStdErr(app.StderrPath, err)
@@ -178,9 +177,9 @@ func writeStdErr(path string, err error) {
 }
 
 func setKilledStatus(app *apps.App) {
-	app.ExitCode = ptr.Of(137)
+	app.ExitCode = new(137)
 	app.Status = common.AppStatusFailed
-	app.FinishedAt = ptr.Of(time.Now())
+	app.FinishedAt = new(time.Now())
 
 	if err := app.SaveToFile(); err != nil {
 		writeStdErr(app.StderrPath, err)
