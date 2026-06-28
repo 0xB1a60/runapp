@@ -3,7 +3,6 @@ package cli
 import (
 	"testing"
 
-	"github.com/gotidy/ptr"
 	"github.com/stretchr/testify/require"
 
 	"github.com/0xB1a60/runapp/internal/common"
@@ -25,7 +24,7 @@ func TestFormatStatus(t *testing.T) {
 		{
 			name:     "AppStatusFailed with exitCode",
 			val:      common.AppStatusFailed,
-			exitCode: ptr.Of(1),
+			exitCode: new(1),
 			expected: "\x1b[0m\x1b[31mFailed\x1b[39m\x1b[0m (1)",
 		},
 		{
@@ -37,7 +36,7 @@ func TestFormatStatus(t *testing.T) {
 		{
 			name:     "AppStatusSuccess with exitCode",
 			val:      common.AppStatusSuccess,
-			exitCode: ptr.Of(0),
+			exitCode: new(0),
 			expected: "\x1b[0m\x1b[32mSuccess\x1b[39m\x1b[0m (0)",
 		},
 		{

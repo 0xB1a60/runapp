@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gotidy/ptr"
 	"github.com/liamg/tml"
 )
 
@@ -24,14 +23,14 @@ func IsDebug() bool {
 
 	val, ok := os.LookupEnv(debugEnv)
 	if !ok {
-		cachedDebug = ptr.Bool(false)
+		cachedDebug = new(false)
 	} else {
-		cachedDebug = ptr.Of(strings.EqualFold(val, "true"))
+		cachedDebug = new(strings.EqualFold(val, "true"))
 	}
 	return *cachedDebug
 }
 
-func DebugLog(format string, args ...interface{}) {
+func DebugLog(format string, args ...any) {
 	if IsDebug() {
 		fmt.Println(tml.Sprintf("<purple>%s</purple>", fmt.Sprintf(format, args...)))
 	}
