@@ -8,11 +8,13 @@ import (
 	"os/exec"
 	"path"
 	"regexp"
+	"strings"
 	"syscall"
+	"time"
 
 	"github.com/charmbracelet/huh"
+	"github.com/goombaio/namegenerator"
 	"github.com/liamg/tml"
-	"github.com/moby/moby/pkg/namesgenerator"
 	"github.com/spf13/cobra"
 
 	"github.com/0xB1a60/runapp/internal/apps"
@@ -131,7 +133,10 @@ const (
 )
 
 func nameTextInput() (*string, error) {
-	placeholder := namesgenerator.GetRandomName(0)
+	seed := time.Now().UTC().UnixNano()
+	nameGenerator := namegenerator.NewNameGenerator(seed)
+
+	placeholder := strings.ReplaceAll(nameGenerator.Generate(), "-", "_")
 
 	var value string
 	form := huh.NewForm(huh.NewGroup(
