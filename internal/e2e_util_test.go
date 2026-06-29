@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/moby/moby/pkg/stdcopy"
+	"github.com/moby/moby/api/pkg/stdcopy"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/exec"
