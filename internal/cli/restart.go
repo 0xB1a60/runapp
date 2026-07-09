@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"syscall"
 
+	"github.com/0xB1a60/runapp/internal/logs"
 	"github.com/liamg/tml"
 	"github.com/spf13/cobra"
 
@@ -98,7 +99,7 @@ func buildRestartCmd() *cobra.Command {
 			if skipLogs {
 				return nil
 			}
-			return viewLogs(cmd.Context(), *app)
+			return viewLogs(cmd.Context(), *app, logs.AllLogs)
 		},
 	}
 	cmd.Flags().BoolVar(&skipLogs, "skip-logs", false, "skip logs streaming after restart")

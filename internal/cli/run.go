@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/0xB1a60/runapp/internal/logs"
 	"github.com/charmbracelet/huh"
 	"github.com/goombaio/namegenerator"
 	"github.com/liamg/tml"
@@ -282,5 +283,5 @@ func createAndRunApp(ctx context.Context, name string, mode common.RunMode, comm
 	if skipLogs {
 		return nil
 	}
-	return viewLogs(ctx, app)
+	return viewLogs(ctx, app, logs.AllLogs)
 }

@@ -12,12 +12,17 @@ import (
 	"github.com/0xB1a60/runapp/internal/util"
 )
 
-func PrintLines(app apps.App) error {
-	if err := printFile(os.Stdout, app.StdoutPath, false); err != nil {
-		return err
+func PrintLines(app apps.App, logType LogType) error {
+	if logType == OutLogs || logType == AllLogs {
+		if err := printFile(os.Stdout, app.StdoutPath, false); err != nil {
+			return err
+		}
 	}
-	if err := printFile(os.Stderr, app.StderrPath, true); err != nil {
-		return err
+
+	if logType == ErrLogs || logType == AllLogs {
+		if err := printFile(os.Stderr, app.StderrPath, true); err != nil {
+			return err
+		}
 	}
 	return nil
 }

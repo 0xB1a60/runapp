@@ -14,7 +14,7 @@ type Log struct {
 }
 
 // Stream reads the logs from the given app's stdout and stderr files
-func Stream(ctx context.Context, app apps.App) (<-chan Log, error) {
+func Stream(ctx context.Context, app apps.App, logType LogType) (<-chan Log, error) {
 	tailCfg := tail.Config{
 		Follow:        true,
 		ReOpen:        true,
@@ -22,6 +22,52 @@ func Stream(ctx context.Context, app apps.App) (<-chan Log, error) {
 		CompleteLines: true,
 		MaxLineSize:   maxBufferCapacity,
 		Logger:        tail.DiscardingLogger, // ignore logs from tail itself
+	}
+
+	ch := make(chan Log, 100)
+
+	if logType == OutLogs {
+		outTail, err := tail.TailFile(app.StdoutPath, tailCfg)
+		if err != nil {
+			return nil, err
+		}
+
+		go func() {
+			for {
+				select {
+				case outLine := <-outTail.Lines:
+					if outLine == nil {
+						return
+					}
+					ch <- Log{Value: outLine.Text, IsErr: false}
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+		return ch, nil
+	}
+
+	if logType == ErrLogs {
+		errTail, err := tail.TailFile(app.StderrPath, tailCfg)
+		if err != nil {
+			return nil, err
+		}
+
+		go func() {
+			for {
+				select {
+				case errLine := <-errTail.Lines:
+					if errLine == nil {
+						return
+					}
+					ch <- Log{Value: errLine.Text, IsErr: true}
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+		return ch, nil
 	}
 
 	outTail, err := tail.TailFile(app.StdoutPath, tailCfg)
@@ -33,8 +79,6 @@ func Stream(ctx context.Context, app apps.App) (<-chan Log, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	ch := make(chan Log, 100)
 
 	go func() {
 		for {
