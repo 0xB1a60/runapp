@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/liamg/tml"
@@ -18,15 +20,16 @@ import (
 )
 
 func buildLogsCmd() *cobra.Command {
+	var logType logs.LogType
+
 	cmd := &cobra.Command{
 		Use:          "logs",
 		SilenceUsage: true,
 		Short:        "Stream the logs (stdout,stderr) of an app",
 		Args:         cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var appName string
-			if len(args) != 0 {
-				appName = args[0]
+			if !slices.Contains(logs.ValidTypes, logType) {
+				return fmt.Errorf("type must be %s, %s or %s", logs.AllLogs, logs.OutLogs, logs.ErrLogs)
 			}
 
 			has, err := apps.HasAny()
@@ -37,6 +40,11 @@ func buildLogsCmd() *cobra.Command {
 			if !has {
 				fmt.Println(common.NoAppsMessage)
 				return nil
+			}
+
+			var appName string
+			if len(args) != 0 {
+				appName = args[0]
 			}
 
 			entry := tui.FlagOrPromptEntry{
@@ -63,19 +71,22 @@ func buildLogsCmd() *cobra.Command {
 				return err
 			}
 
-			return viewLogs(cmd.Context(), *app)
+			return viewLogs(cmd.Context(), *app, logType)
 		},
 	}
+	cmd.Flags().StringVar(&logType, "type", logs.AllLogs,
+		fmt.Sprintf("type of logs to show (one of: %s)", strings.Join(logs.ValidTypes, ", ")))
+
 	return cmd
 }
 
-func viewLogs(ctx context.Context, app apps.App) error {
+func viewLogs(ctx context.Context, app apps.App, logType logs.LogType) error {
 	if !app.IsRunning() {
-		return logs.PrintLines(app)
+		return logs.PrintLines(app, logType)
 	}
 
 	fmt.Println(tml.Sprintf("<yellow>▶ Streaming logs for app: %s. You can stop the streaming with CTRL+C, the process won't be interrupted</yellow>", app.Name))
-	logStream, err := logs.Stream(ctx, app)
+	logStream, err := logs.Stream(ctx, app, logType)
 	if err != nil {
 		return err
 	}

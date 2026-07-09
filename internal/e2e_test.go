@@ -118,9 +118,21 @@ func TestLogs(t *testing.T) {
 	runRes := s.exec(`run my-app --start-on-boot --command 'echo "stdout"; echo "stderr" >&2'`, addShellSH())
 	require.Equal(t, 0, runRes.exitCode)
 
-	res := s.exec(" logs my-app")
+	res := s.exec("logs my-app")
 	require.Contains(t, res.stdout, "stdout")
 	require.Contains(t, res.stderr, "\x1b[0m\x1b[31mstderr\x1b[39m\x1b[0m")
+
+	res = s.exec("logs my-app --type all")
+	require.Contains(t, res.stderr, "\x1b[0m\x1b[31mstderr\x1b[39m\x1b[0m")
+	require.Contains(t, res.stdout, "stdout")
+
+	res = s.exec("logs my-app --type stderr")
+	require.Contains(t, res.stderr, "\x1b[0m\x1b[31mstderr\x1b[39m\x1b[0m")
+	require.Empty(t, res.stdout)
+
+	res = s.exec("logs my-app --type stdout")
+	require.Empty(t, res.stderr)
+	require.Contains(t, res.stdout, "stdout")
 }
 
 func TestRemoveMany(t *testing.T) {
