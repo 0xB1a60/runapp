@@ -37,17 +37,6 @@ func buildBackgroundCmd() *cobra.Command {
 				return err
 			}
 
-			app.Status = common.AppStatusRunning
-			app.PID = os.Getpid()
-			app.ExitCode = nil
-			app.StartedAt = new(time.Now())
-
-			if err := app.SaveToFile(); err != nil {
-				fmt.Println("error saving cfg", err)
-				writeStdErr(app.StderrPath, err)
-				return err
-			}
-
 			stdoutFile, err := os.Create(app.StdoutPath)
 			if err != nil {
 				writeStdErr(app.StderrPath, err)
@@ -88,6 +77,19 @@ func buildBackgroundCmd() *cobra.Command {
 					return err
 				}
 
+				writeStdErr(app.StderrPath, err)
+				return err
+			}
+
+			// only now do we know the real PID of the spawned process —
+			// persist that instead of this wrapper's own PID
+			app.Status = common.AppStatusRunning
+			app.PID = cmd.Process.Pid
+			app.ExitCode = nil
+			app.StartedAt = new(time.Now())
+
+			if err := app.SaveToFile(); err != nil {
+				fmt.Println("error saving cfg", err)
 				writeStdErr(app.StderrPath, err)
 				return err
 			}
