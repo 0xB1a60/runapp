@@ -102,8 +102,7 @@ func buildBackgroundCmd() *cobra.Command {
 			var killed atomic.Bool
 			go func() {
 				if err := cmd.Wait(); err != nil {
-					var exitError *exec.ExitError
-					if errors.As(err, &exitError) {
+					if exitError, ok := errors.AsType[*exec.ExitError](err); ok {
 						if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
 							if !killed.Load() {
 								app.ExitCode = new(status.ExitStatus())
