@@ -1,12 +1,12 @@
 package apps
 
 import (
-	"encoding/json"
 	"os"
 	"path"
 	"sort"
 	"sync"
 
+	"github.com/bytedance/sonic"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/0xB1a60/runapp/internal/common"
@@ -42,7 +42,7 @@ func List() ([]App, error) {
 				}
 
 				var app App
-				if err := json.Unmarshal(configContent, &app); err != nil {
+				if err := sonic.Unmarshal(configContent, &app); err != nil {
 					return err
 				}
 				app.checkAndCorrectStatus()

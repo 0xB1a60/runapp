@@ -65,7 +65,7 @@ func buildKillCmd() *cobra.Command {
 			}
 
 			if !app.IsRunning() {
-				return errors.New("app is not running")
+				return fmt.Errorf("app is not running")
 			}
 
 			killApp(cmd.Context(), app)
@@ -123,7 +123,7 @@ func namePickerValidator(list []apps.App, appName string) error {
 	}
 
 	if foundApp.Status == common.AppStatusSuccess || foundApp.Status == common.AppStatusFailed {
-		return errors.New("app is not running")
+		return fmt.Errorf("app is not running")
 	}
 	return nil
 }

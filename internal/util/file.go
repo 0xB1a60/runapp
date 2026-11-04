@@ -23,6 +23,26 @@ func FileExists(value string) bool {
 	return false
 }
 
+func WriteFile(name string, data []byte) error {
+	f, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	if _, err = f.Write(data); err != nil {
+		return err
+	}
+
+	if err = f.Sync(); err != nil {
+		return err
+	}
+
+	if err = f.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ResolvePath resolves a path, expanding the home directory if it starts with "~"
 func ResolvePath(path string) (string, error) {
 	if strings.HasPrefix(path, "~") {

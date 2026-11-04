@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/charmbracelet/huh"
 )
@@ -16,7 +16,7 @@ func TextWithPlaceholder(title string, placeholder string) func() (*string, erro
 				Placeholder(placeholder).
 				Validate(func(s string) error {
 					if len(s) == 0 && len(placeholder) == 0 {
-						return errors.New("please enter value")
+						return fmt.Errorf("please enter value")
 					}
 					return nil
 				}).

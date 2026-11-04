@@ -1,17 +1,17 @@
 package apps
 
 import (
-	"encoding/json"
-	"errors"
+	"fmt"
 	"os"
 	"path"
 
 	"github.com/0xB1a60/runapp/internal/common"
 	"github.com/0xB1a60/runapp/internal/util"
+	"github.com/bytedance/sonic"
 )
 
 var (
-	ErrNotFound = errors.New("app does not exist")
+	ErrNotFound = fmt.Errorf("app does not exist")
 )
 
 func Get(name string) (*App, error) {
@@ -29,7 +29,7 @@ func Get(name string) (*App, error) {
 	}
 
 	var app App
-	if err := json.Unmarshal(configContent, &app); err != nil {
+	if err := sonic.Unmarshal(configContent, &app); err != nil {
 		return nil, err
 	}
 	app.checkAndCorrectStatus()

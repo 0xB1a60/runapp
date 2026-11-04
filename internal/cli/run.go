@@ -169,7 +169,7 @@ func nameValidateFunc(value string) error {
 
 	match, _ := regexp.MatchString("^[a-z0-9_-]+$", value)
 	if !match {
-		return errors.New("name must only contain lowercase, alphanumeric and -_")
+		return fmt.Errorf("name must only contain lowercase, alphanumeric and -_")
 	}
 	return nil
 }
@@ -191,7 +191,7 @@ func commandText() (*string, error) {
 
 func commandValidateFunc(value string) error {
 	if len(value) == 0 {
-		return errors.New("value must not be empty")
+		return fmt.Errorf("value must not be empty")
 	}
 	return nil
 }

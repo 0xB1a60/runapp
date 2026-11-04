@@ -80,7 +80,7 @@ func buildInstallOnBootCmd() *cobra.Command {
 					return err
 				}
 
-				if err := os.WriteFile(systemdSvcPath, []byte(afterBinaryPath), os.ModePerm); err != nil {
+				if err := util.WriteFile(systemdSvcPath, []byte(afterBinaryPath)); err != nil {
 					return err
 				}
 
@@ -105,7 +105,7 @@ func buildInstallOnBootCmd() *cobra.Command {
 					return err
 				}
 
-				if err := os.WriteFile(path.Join(cwd, "runapp-boot.service"), []byte(afterBinaryPath), os.ModePerm); err != nil {
+				if err := util.WriteFile(path.Join(cwd, "runapp-boot.service"), []byte(afterBinaryPath)); err != nil {
 					return err
 				}
 

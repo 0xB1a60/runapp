@@ -2,13 +2,14 @@ package tui
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/huh"
 )
 
 var (
-	ErrStop = errors.New("stop")
+	ErrStop = fmt.Errorf("stop")
 )
 
 type FlagOrPromptEntry struct {
