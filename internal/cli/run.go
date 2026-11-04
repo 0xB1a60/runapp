@@ -8,13 +8,11 @@ import (
 	"os/exec"
 	"path"
 	"regexp"
-	"strings"
 	"syscall"
-	"time"
 
 	"github.com/0xB1a60/runapp/internal/logs"
 	"github.com/charmbracelet/huh"
-	"github.com/goombaio/namegenerator"
+	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/liamg/tml"
 	"github.com/spf13/cobra"
 
@@ -134,10 +132,7 @@ const (
 )
 
 func nameTextInput() (*string, error) {
-	seed := time.Now().UTC().UnixNano()
-	nameGenerator := namegenerator.NewNameGenerator(seed)
-
-	placeholder := strings.ReplaceAll(nameGenerator.Generate(), "-", "_")
+	placeholder := petname.Generate(3, "_")
 
 	var value string
 	form := huh.NewForm(huh.NewGroup(
