@@ -1,13 +1,12 @@
 package apps
 
 import (
-	"encoding/json"
-	"os"
 	"path"
 	"time"
 
 	"github.com/0xB1a60/runapp/internal/common"
 	"github.com/0xB1a60/runapp/internal/util"
+	"github.com/bytedance/sonic"
 )
 
 type App struct {
@@ -35,12 +34,12 @@ func (app *App) SaveToFile() error {
 		return err
 	}
 
-	b, err := json.Marshal(app)
+	b, err := sonic.Marshal(app)
 	if err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(path.Join(homeDir, app.Name, common.FileConfig), b, os.ModePerm); err != nil {
+	if err := util.WriteFile(path.Join(homeDir, app.Name, common.FileConfig), b); err != nil {
 		return err
 	}
 	return nil
