@@ -1,0 +1,23 @@
+name: Octopus Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+# Cancel the old review when new commits are pushed to the same PR
+concurrency:
+  group: octopus-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    # Skip drafts
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: octopusreview/action@v1

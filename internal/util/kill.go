@@ -1,10 +1,10 @@
 package util
 
 import (
+	"errors"
 	"syscall"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/shirou/gopsutil/v4/process"
 )
 
@@ -48,7 +48,7 @@ func killProcessAndChildren(pid int, signal syscall.Signal) error {
 	var multiErr error
 	for _, proc := range allProcesses {
 		if err := proc.SendSignal(signal); err != nil {
-			multiErr = multierror.Append(multiErr, err)
+			multiErr = errors.Join(multiErr, err)
 		}
 	}
 	if multiErr != nil {
