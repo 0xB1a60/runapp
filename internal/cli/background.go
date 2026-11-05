@@ -145,8 +145,8 @@ func buildBackgroundCmd() *cobra.Command {
 					if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 						fmt.Println("failed to send SIGTERM", err)
 					}
-				case err := <-done:
-					return err
+				case <-done: //nolint:errcheck // error intentionally ignored
+					return nil
 				case <-ctx.Done():
 					killed.Store(true)
 					if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
